@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de estilos — gestor-gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     TOKENS — reflejo exacto de DESIGN.md §2 (Tailwind 4 @theme)
+     ============================================================ */
+  :root {
+    color-scheme: light dark;
+
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --color-surface: light-dark(#fafafa, #18181b);
+    --color-surface-raised: light-dark(#ffffff, #27272a);
+    --color-surface-sunken: light-dark(#f4f4f5, #3f3f46);
+
+    --color-ink: light-dark(#18181b, #fafafa);
+    --color-ink-muted: light-dark(#52525b, #a1a1aa);
+
+    --color-line: light-dark(#e4e4e7, #3f3f46);
+
+    --color-primary: light-dark(#4f46e5, #818cf8);
+    --color-primary-strong: light-dark(#4338ca, #a5b4fc);
+    --color-primary-soft: light-dark(#e0e7ff, #1e1b4b);
+
+    --color-accent: light-dark(#059669, #34d399);
+    --color-accent-soft: light-dark(#d1fae5, #022c22);
+
+    --color-success: light-dark(#059669, #34d399);
+    --color-success-soft: light-dark(#d1fae5, #022c22);
+    --color-danger: light-dark(#dc2626, #f87171);
+    --color-danger-soft: light-dark(#fee2e2, #450a0a);
+    --color-warning: light-dark(#d97706, #fbbf24);
+    --color-warning-soft: light-dark(#fef3c7, #451a03);
+    --color-info: light-dark(#0891b2, #22d3ee);
+    --color-info-soft: light-dark(#cffafe, #083344);
+
+    --color-cat-1: #f97316;
+    --color-cat-2: #3b82f6;
+    --color-cat-3: #8b5cf6;
+    --color-cat-4: #f43f5e;
+    --color-cat-5: #eab308;
+    --color-cat-6: #06b6d4;
+    --color-cat-7: #10b981;
+    --color-cat-8: #71717a;
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-full: 9999px;
+
+    --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+    --shadow-raised: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-modal: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  a { color: var(--color-primary); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ============================================================
+     LAYOUT DE LA GUÍA (no forma parte del sistema de diseño en sí)
+     ============================================================ */
+  .guide-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 3.75rem;
+    padding: 0 1.5rem;
+    background: var(--color-surface-raised);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .guide-topbar .brand { display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: 1.05rem; }
+  .guide-topbar .brand .dot { width: 1.5rem; height: 1.5rem; border-radius: var(--radius-full); background: var(--color-primary); display: inline-block; }
+  .theme-toggle {
+    display: inline-flex; align-items: center; gap: .5rem;
+    height: 2.5rem; padding: 0 .9rem; border-radius: var(--radius-md);
+    border: 1px solid var(--color-line); background: var(--color-surface-raised);
+    color: var(--color-ink); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
+  }
+  .theme-toggle:hover { background: var(--color-surface-sunken); }
+
+  main { max-width: 72rem; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
+
+  section.guide-section { margin-top: 3.5rem; }
+  section.guide-section:first-of-type { margin-top: 2rem; }
+  .guide-section > h2 {
+    font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 .4rem;
+  }
+  .guide-section > p.lead { color: var(--color-ink-muted); margin: 0 0 1.5rem; max-width: 60ch; font-size: .95rem; }
+  h3.sub { font-size: 1rem; font-weight: 700; margin: 2rem 0 .9rem; }
+  h3.sub:first-of-type { margin-top: 0; }
+
+  .grid { display: grid; gap: 1rem; }
+  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 720px) {
+    .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  .state-row { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-start; }
+  .state-item { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .state-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-ink-muted); }
+
+  /* ============================================================
+     PALETA
+     ============================================================ */
+  .swatch-card {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-card);
+  }
+  .swatch-fill { height: 4.5rem; }
+  .swatch-meta { padding: .75rem .9rem; }
+  .swatch-meta .name { font-weight: 700; font-size: .85rem; }
+  .swatch-meta .role { font-size: .75rem; color: var(--color-ink-muted); margin-top: .1rem; }
+  .swatch-meta .hex { font-size: .72rem; color: var(--color-ink-muted); margin-top: .35rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; display: flex; gap: .5rem; }
+
+  /* ============================================================
+     TIPOGRAFÍA
+     ============================================================ */
+  .type-row { display: flex; align-items: baseline; gap: 1.5rem; padding: 1rem 0; border-bottom: 1px solid var(--color-line); }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .type-meta { flex: 0 0 11rem; font-size: .72rem; color: var(--color-ink-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.4; }
+  .type-hero { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -0.02em; }
+  .type-amount-lg { font-size: 1.125rem; font-weight: 700; }
+  .type-amount-sm { font-size: .875rem; font-weight: 600; }
+  .type-h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+  .type-h2 { font-size: 1.125rem; font-weight: 600; }
+  .type-h3 { font-size: 1rem; font-weight: 600; }
+  .type-h4 { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-ink-muted); }
+  .type-body { font-size: 1rem; }
+  .type-body-sm { font-size: .875rem; }
+  .type-small { font-size: .75rem; color: var(--color-ink-muted); }
+
+  /* ============================================================
+     TOKENS — espaciado / radios / sombras
+     ============================================================ */
+  .token-strip { display: flex; align-items: center; gap: .9rem; margin-bottom: .6rem; }
+  .token-strip .bar { background: var(--color-primary); border-radius: var(--radius-sm); height: 1rem; }
+  .token-strip .label { font-size: .78rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-ink-muted); min-width: 12rem; }
+
+  .radius-demo { width: 4.5rem; height: 4.5rem; background: var(--color-primary-soft); border: 2px solid var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; color: var(--color-primary); }
+  .shadow-demo { width: 8rem; height: 4.5rem; background: var(--color-surface-raised); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 600; color: var(--color-ink-muted); }
+
+  /* ============================================================
+     BOTONES
+     ============================================================ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    height: 2.75rem; border-radius: var(--radius-md); padding: 0 1rem;
+    font: inherit; font-size: .875rem; font-weight: 600; border: 1px solid transparent;
+    cursor: pointer; transition: background-color .15s, border-color .15s, transform .1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn svg { width: 1rem; height: 1rem; }
+
+  .btn-primary { background: var(--color-primary); color: white; }
+  .btn-primary:hover { background: var(--color-primary-strong); }
+  .btn-primary.is-focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .btn-primary.is-disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-secondary { background: var(--color-surface-raised); color: var(--color-ink); border-color: var(--color-line); }
+  .btn-secondary:hover { background: var(--color-surface-sunken); }
+  .btn-secondary.is-focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .btn-secondary.is-disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-danger { background: var(--color-danger); color: white; }
+  .btn-danger:hover { filter: brightness(0.9); }
+  .btn-danger.is-focus { outline: 2px solid var(--color-danger); outline-offset: 2px; }
+  .btn-danger.is-disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-ghost { background: transparent; color: var(--color-primary); height: auto; padding: .4rem .6rem; }
+  .btn-ghost:hover { background: var(--color-primary-soft); }
+  .btn-ghost.is-focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .btn-ghost.is-disabled { opacity: .5; cursor: not-allowed; background: transparent; }
+
+  .spinner { width: 1rem; height: 1rem; animation: spin 0.8s linear infinite; }
+  .spinner circle.track { opacity: .25; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.2s; } }
+
+  /* ============================================================
+     INPUTS
+     ============================================================ */
+  .field { display: flex; flex-direction: column; gap: .35rem; width: 100%; max-width: 20rem; }
+  .field label { font-size: .875rem; font-weight: 500; color: var(--color-ink); }
+  .field label .req { color: var(--color-danger); }
+  .field input, .field select, .field textarea {
+    height: 2.75rem; border-radius: var(--radius-md); border: 1px solid var(--color-line);
+    background: var(--color-surface-raised); color: var(--color-ink); padding: 0 .75rem;
+    font: inherit; font-size: .875rem;
+  }
+  .field textarea { height: auto; min-height: 5rem; padding: .5rem .75rem; resize: vertical; }
+  .field input::placeholder { color: var(--color-ink-muted); }
+  .field input:hover, .field select:hover { border-color: var(--color-ink-muted); }
+  .field.is-focus input { outline: 2px solid var(--color-primary); outline-offset: 2px; border-color: var(--color-primary); }
+  .field.is-disabled input { background: var(--color-surface-sunken); color: var(--color-ink-muted); cursor: not-allowed; }
+  .field.is-invalid input { border-color: var(--color-danger); }
+  .help { font-size: .75rem; color: var(--color-ink-muted); }
+  .error-msg { display: flex; align-items: center; gap: .3rem; font-size: .75rem; font-weight: 500; color: var(--color-danger); }
+  .error-msg svg { width: .85rem; height: .85rem; flex-shrink: 0; }
+
+  .color-picker { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .color-dot { width: 2rem; height: 2rem; border-radius: 999px; border: none; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
+  .color-dot.selected { box-shadow: 0 0 0 2px var(--color-surface-raised), 0 0 0 4px var(--color-primary); }
+  .color-dot.selected svg { width: 1rem; height: 1rem; color: white; }
+
+  /* ============================================================
+     TARJETAS
+     ============================================================ */
+  .card {
+    background: var(--color-surface-raised); border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 1.25rem;
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: 1rem; }
+  .card-highlight { background: var(--color-primary-soft); border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent); }
+
+  /* ============================================================
+     BADGES DE CATEGORÍA
+     ============================================================ */
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: .45rem; height: 1.75rem;
+    border-radius: 999px; padding: 0 .65rem 0 .4rem; font-size: .75rem; font-weight: 500;
+    background: var(--color-surface-raised);
+  }
+  .cat-badge .dot { width: .5rem; height: .5rem; border-radius: 999px; flex-shrink: 0; }
+  .cat-badge-sm { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--color-ink); }
+  .cat-badge-sm .dot { width: .6rem; height: .6rem; border-radius: 999px; }
+
+  /* ============================================================
+     TABLA
+     ============================================================ */
+  table.expenses { width: 100%; border-collapse: collapse; font-size: .875rem; }
+  table.expenses thead th {
+    text-align: left; font-size: .7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--color-ink-muted); padding: .6rem .8rem;
+    border-bottom: 1px solid var(--color-line);
+  }
+  table.expenses thead th.num { text-align: right; }
+  table.expenses tbody td { padding: .7rem .8rem; border-bottom: 1px solid var(--color-line); }
+  table.expenses tbody tr:last-child td { border-bottom: none; }
+  table.expenses tbody tr:hover { background: var(--color-surface-sunken); }
+  table.expenses .amount { text-align: right; font-weight: 600; }
+  table.expenses .muted { color: var(--color-ink-muted); }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: var(--radius-md); border: none; background: transparent; color: var(--color-ink-muted); cursor: pointer; }
+  .icon-btn:hover { background: var(--color-surface-sunken); }
+  .icon-btn.danger:hover { background: var(--color-danger-soft); color: var(--color-danger); }
+  .icon-btn svg { width: 1rem; height: 1rem; }
+
+  /* mobile expense row */
+  .expense-row-mobile {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    border: 1px solid var(--color-line); border-radius: var(--radius-lg); padding: .75rem 1rem;
+    background: var(--color-surface-raised);
+  }
+  .expense-row-mobile .left { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+  .expense-row-mobile .avatar { width: 2rem; height: 2rem; border-radius: 999px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .expense-row-mobile .title { font-size: .875rem; font-weight: 500; }
+  .expense-row-mobile .sub { font-size: .75rem; color: var(--color-ink-muted); }
+  .expense-row-mobile .amount { font-weight: 700; }
+
+  /* ============================================================
+     NAVEGACIÓN
+     ============================================================ */
+  .sidebar-demo {
+    width: 15rem; border: 1px solid var(--color-line); border-radius: var(--radius-lg);
+    background: var(--color-surface-raised); overflow: hidden;
+  }
+  .sidebar-demo .sb-head { height: 3.5rem; display: flex; align-items: center; gap: .5rem; padding: 0 1.1rem; border-bottom: 1px solid var(--color-line); font-weight: 800; }
+  .sidebar-demo .sb-head .dot { width: 1.25rem; height: 1.25rem; border-radius: 999px; background: var(--color-primary); }
+  .sidebar-demo .sb-nav { padding: .6rem; display: flex; flex-direction: column; gap: .2rem; }
+  .sidebar-demo .sb-link {
+    display: flex; align-items: center; gap: .6rem; height: 2.5rem; border-radius: var(--radius-md);
+    padding: 0 .7rem; font-size: .8rem; font-weight: 500; color: var(--color-ink-muted); position: relative;
+  }
+  .sidebar-demo .sb-link.active { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 700; }
+  .sidebar-demo .sb-link.active::before { content: ""; position: absolute; left: -0.6rem; top: .3rem; bottom: .3rem; width: 3px; background: var(--color-primary); border-radius: 999px; }
+  .sidebar-demo .sb-foot { border-top: 1px solid var(--color-line); padding: .7rem; display: flex; align-items: center; gap: .6rem; }
+  .sidebar-demo .avatar-init { width: 2rem; height: 2rem; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary); font-weight: 700; font-size: .75rem; display: flex; align-items: center; justify-content: center; }
+
+  .tabbar-demo {
+    display: flex; border: 1px solid var(--color-line); border-top: 2px solid var(--color-line);
+    border-radius: var(--radius-lg); overflow: hidden; max-width: 22rem;
+  }
+  .tabbar-demo .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .2rem; height: 3.75rem; font-size: .68rem; font-weight: 500; color: var(--color-ink-muted); background: var(--color-surface-raised);
+  }
+  .tabbar-demo .tab-item.active { color: var(--color-primary); font-weight: 700; }
+  .tabbar-demo .tab-item svg { width: 1.1rem; height: 1.1rem; }
+
+  /* ============================================================
+     TOASTS
+     ============================================================ */
+  .toast { display: flex; align-items: flex-start; gap: .6rem; border-radius: var(--radius-md); border: 1px solid; padding: .8rem; font-size: .8rem; max-width: 24rem; box-shadow: var(--shadow-raised); }
+  .toast svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+  .toast-success { background: var(--color-success-soft); border-color: color-mix(in srgb, var(--color-success) 30%, transparent); }
+  .toast-success svg { color: var(--color-success); }
+  .toast-danger { background: var(--color-danger-soft); border-color: color-mix(in srgb, var(--color-danger) 30%, transparent); }
+  .toast-danger svg { color: var(--color-danger); }
+  .toast-warning { background: var(--color-warning-soft); border-color: color-mix(in srgb, var(--color-warning) 30%, transparent); }
+  .toast-warning svg { color: var(--color-warning); }
+  .toast-info { background: var(--color-info-soft); border-color: color-mix(in srgb, var(--color-info) 30%, transparent); }
+  .toast-info svg { color: var(--color-info); }
+
+  /* ============================================================
+     ESTADOS VACÍO / ERROR / CARGA
+     ============================================================ */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; gap: .6rem; text-align: center;
+    border: 1px dashed var(--color-line); border-radius: var(--radius-lg); padding: 2.5rem 1.5rem;
+  }
+  .empty-state svg { width: 2.25rem; height: 2.25rem; color: var(--color-ink-muted); }
+  .empty-state .title { font-size: .875rem; font-weight: 600; }
+  .empty-state .desc { font-size: .8rem; color: var(--color-ink-muted); max-width: 26rem; }
+
+  .error-state { border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent); background: var(--color-danger-soft); border-radius: var(--radius-lg); padding: 2rem 1.5rem; display: flex; flex-direction: column; align-items: center; gap: .6rem; text-align: center; }
+  .error-state svg { width: 2rem; height: 2rem; color: var(--color-danger); }
+
+  .skeleton { background: var(--color-surface-sunken); border-radius: var(--radius-md); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; opacity: .7; } }
+
+  /* ============================================================
+     MODAL (demo estático)
+     ============================================================ */
+  .modal-demo-wrap { position: relative; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--color-line); }
+  .modal-overlay { background: rgb(9 9 11 / 0.55); padding: 2.5rem 1.5rem; display: flex; align-items: center; justify-content: center; min-height: 22rem; }
+  .modal-panel { width: 100%; max-width: 24rem; background: var(--color-surface-raised); border-radius: var(--radius-xl); box-shadow: var(--shadow-modal); padding: 1.5rem; }
+  .modal-panel .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .modal-panel .modal-head h4 { margin: 0; font-size: 1.125rem; font-weight: 600; }
+  .modal-panel .modal-foot { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; }
+
+  code.token { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--color-surface-sunken); padding: .1rem .4rem; border-radius: var(--radius-sm); font-size: .8em; }
+
+  footer.guide-footer { border-top: 1px solid var(--color-line); margin-top: 4rem; padding: 2rem 1.5rem; text-align: center; color: var(--color-ink-muted); font-size: .8rem; }
+</style>
+</head>
+<body>
+
+<header class="guide-topbar">
+  <div class="brand"><span class="dot"></span> gestor-gastos — Guía de estilos</div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
+    <span id="themeToggleLabel">Modo: automático (sistema)</span>
+  </button>
+</header>
+
+<main>
+
+  <p class="lead" style="max-width:70ch;">
+    Referencia visual en vivo del sistema de diseño de <strong>gestor-gastos</strong>.
+    Todos los valores de esta página provienen literalmente de los tokens
+    definidos en <code class="token">DESIGN.md</code>. El botón de la esquina
+    superior alterna manualmente entre modo claro y oscuro para poder
+    inspeccionar ambos sin depender de la preferencia del sistema operativo.
+  </p>
+
+  <!-- ============================================================
+       PALETA
+       ============================================================ -->
+  <section class="guide-section" id="palette">
+    <h2>Paleta de colores</h2>
+    <p class="lead">Valores exactos en modo claro y oscuro, vía <code class="token">light-dark()</code>. Ver DESIGN.md §1.3.</p>
+
+    <h3 class="sub">Marca y neutros</h3>
+    <div class="grid grid-cols-4" id="swatches-brand"></div>
+
+    <h3 class="sub">Semánticos</h3>
+    <div class="grid grid-cols-4" id="swatches-semantic"></div>
+
+    <h3 class="sub">Paleta categórica (gráficos y badges — fija en ambos modos)</h3>
+    <div class="grid grid-cols-4" id="swatches-cat"></div>
+  </section>
+
+  <!-- ============================================================
+       TIPOGRAFÍA
+       ============================================================ -->
+  <section class="guide-section" id="typography">
+    <h2>Tipografía</h2>
+    <p class="lead">Plus Jakarta Sans (Google Fonts), pesos 400–800, cifras tabulares en montos. Ver DESIGN.md §1.4.</p>
+
+    <div class="type-row">
+      <div class="type-meta">Monto hero<br>text-4xl/5xl · 800</div>
+      <div class="type-hero tabular">$ 1.234,50</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">Monto en tarjeta/fila<br>text-lg · 700</div>
+      <div class="type-amount-lg tabular">$ 42,50</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">Monto pequeño<br>text-sm · 600</div>
+      <div class="type-amount-sm tabular">$ 320,50</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">H1 — título de vista<br>text-2xl · 700</div>
+      <div class="type-h1">Gastos</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">H2 — sección<br>text-lg · 600</div>
+      <div class="type-h2">Gastos por categoría</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">H3 — subtítulo<br>text-base · 600</div>
+      <div class="type-h3">Detalle del periodo</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">H4 — etiqueta de grupo<br>text-xs · 600 · uppercase</div>
+      <div class="type-h4">Predefinidas</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">Body<br>text-base · 400</div>
+      <div class="type-body">Registrá tus gastos diarios y mirá en qué se te va la plata cada mes.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">Body en formulario<br>text-sm · 400</div>
+      <div class="type-body-sm">Almuerzo con el equipo</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">Small / ayuda<br>text-xs · muted</div>
+      <div class="type-small">Mínimo 8 caracteres</div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TOKENS: ESPACIADO / RADIOS / SOMBRAS
+       ============================================================ -->
+  <section class="guide-section" id="tokens">
+    <h2>Tokens</h2>
+    <p class="lead">Espaciado (escala 4px de Tailwind), radios y sombras. Ver DESIGN.md §2.</p>
+
+    <h3 class="sub">Espaciado</h3>
+    <div class="token-strip"><span class="label">gap-2 · 8px</span><span class="bar" style="width:8px;"></span></div>
+    <div class="token-strip"><span class="label">p-4 · 16px</span><span class="bar" style="width:16px;"></span></div>
+    <div class="token-strip"><span class="label">sm:p-6 · 24px</span><span class="bar" style="width:24px;"></span></div>
+    <div class="token-strip"><span class="label">space-y-6 · 24px</span><span class="bar" style="width:24px;"></span></div>
+    <div class="token-strip"><span class="label">space-y-4 · 16px</span><span class="bar" style="width:16px;"></span></div>
+
+    <h3 class="sub">Radios</h3>
+    <div class="state-row">
+      <div class="state-item"><div class="radius-demo" style="border-radius:var(--radius-sm);">sm</div><span class="state-label">6px</span></div>
+      <div class="state-item"><div class="radius-demo" style="border-radius:var(--radius-md);">md</div><span class="state-label">8px</span></div>
+      <div class="state-item"><div class="radius-demo" style="border-radius:var(--radius-lg);">lg</div><span class="state-label">12px</span></div>
+      <div class="state-item"><div class="radius-demo" style="border-radius:var(--radius-xl);">xl</div><span class="state-label">16px</span></div>
+      <div class="state-item"><div class="radius-demo" style="border-radius:var(--radius-full);">full</div><span class="state-label">pill</span></div>
+    </div>
+
+    <h3 class="sub">Sombras</h3>
+    <div class="state-row">
+      <div class="state-item"><div class="shadow-demo" style="box-shadow:var(--shadow-card);">card</div><span class="state-label">shadow-card</span></div>
+      <div class="state-item"><div class="shadow-demo" style="box-shadow:var(--shadow-raised);">raised</div><span class="state-label">shadow-raised</span></div>
+      <div class="state-item"><div class="shadow-demo" style="box-shadow:var(--shadow-modal);">modal</div><span class="state-label">shadow-modal</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       BOTONES
+       ============================================================ -->
+  <section class="guide-section" id="buttons">
+    <h2>Botones</h2>
+    <p class="lead">Reposo, hover real (pasá el mouse), focus, activo/presionado, deshabilitado y carga. Ver DESIGN.md §3.1.</p>
+
+    <h3 class="sub">Primario</h3>
+    <div class="state-row">
+      <div class="state-item"><button class="btn btn-primary">Guardar gasto</button><span class="state-label">Reposo / hover real</span></div>
+      <div class="state-item"><button class="btn btn-primary is-focus">Guardar gasto</button><span class="state-label">Focus</span></div>
+      <div class="state-item"><button class="btn btn-primary" disabled>Guardar gasto</button><span class="state-label">Deshabilitado</span></div>
+      <div class="state-item">
+        <button class="btn btn-primary" aria-busy="true" disabled>
+          <svg class="spinner" viewBox="0 0 24 24" fill="none"><circle class="track" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Guardando…
+        </button>
+        <span class="state-label">Carga</span>
+      </div>
+    </div>
+
+    <h3 class="sub">Secundario</h3>
+    <div class="state-row">
+      <div class="state-item"><button class="btn btn-secondary">Cancelar</button><span class="state-label">Reposo / hover real</span></div>
+      <div class="state-item"><button class="btn btn-secondary is-focus">Cancelar</button><span class="state-label">Focus</span></div>
+      <div class="state-item"><button class="btn btn-secondary" disabled>Cancelar</button><span class="state-label">Deshabilitado</span></div>
+    </div>
+
+    <h3 class="sub">Peligro</h3>
+    <div class="state-row">
+      <div class="state-item"><button class="btn btn-danger">Eliminar gasto</button><span class="state-label">Reposo / hover real</span></div>
+      <div class="state-item"><button class="btn btn-danger is-focus">Eliminar gasto</button><span class="state-label">Focus</span></div>
+      <div class="state-item"><button class="btn btn-danger" disabled>Eliminar gasto</button><span class="state-label">Deshabilitado</span></div>
+    </div>
+
+    <h3 class="sub">Fantasma / texto</h3>
+    <div class="state-row">
+      <div class="state-item"><button class="btn btn-ghost">Editar</button><span class="state-label">Reposo / hover real</span></div>
+      <div class="state-item"><button class="btn btn-ghost is-focus">Editar</button><span class="state-label">Focus</span></div>
+      <div class="state-item"><button class="btn btn-ghost" disabled>Editar</button><span class="state-label">Deshabilitado</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       INPUTS
+       ============================================================ -->
+  <section class="guide-section" id="inputs">
+    <h2>Inputs de formulario</h2>
+    <p class="lead">Reposo, focus, deshabilitado y error. Ver DESIGN.md §3.2.</p>
+
+    <div class="state-row">
+      <div class="state-item">
+        <div class="field">
+          <label for="i1">Monto <span class="req">*</span></label>
+          <input id="i1" type="text" placeholder="0.00">
+          <span class="help">Máximo 2 decimales</span>
+        </div>
+        <span class="state-label">Reposo</span>
+      </div>
+      <div class="state-item">
+        <div class="field is-focus">
+          <label for="i2">Nota</label>
+          <input id="i2" type="text" value="Almuerzo con el equipo">
+        </div>
+        <span class="state-label">Focus</span>
+      </div>
+      <div class="state-item">
+        <div class="field is-disabled">
+          <label for="i3">Categoría</label>
+          <input id="i3" type="text" value="Comida" disabled>
+        </div>
+        <span class="state-label">Deshabilitado</span>
+      </div>
+      <div class="state-item">
+        <div class="field is-invalid">
+          <label for="i4">Monto <span class="req">*</span></label>
+          <input id="i4" type="text" value="-5" aria-invalid="true">
+          <span class="error-msg"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>El monto debe ser mayor que 0.</span>
+        </div>
+        <span class="state-label">Error</span>
+      </div>
+    </div>
+
+    <h3 class="sub">Select y color de categoría</h3>
+    <div class="state-row">
+      <div class="state-item">
+        <div class="field">
+          <label for="s1">Categoría</label>
+          <select id="s1">
+            <option>Todas</option>
+            <option>Comida</option>
+            <option>Transporte</option>
+          </select>
+        </div>
+        <span class="state-label">Select</span>
+      </div>
+      <div class="state-item">
+        <div class="field" style="max-width:none;">
+          <label>Color</label>
+          <div class="color-picker">
+            <button class="color-dot" style="background:var(--color-cat-1);" aria-label="Naranja"></button>
+            <button class="color-dot" style="background:var(--color-cat-2);" aria-label="Azul"></button>
+            <button class="color-dot selected" style="background:var(--color-cat-3);" aria-label="Violeta, seleccionado">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="color-dot" style="background:var(--color-cat-4);" aria-label="Rosa"></button>
+            <button class="color-dot" style="background:var(--color-cat-5);" aria-label="Amarillo"></button>
+            <button class="color-dot" style="background:var(--color-cat-6);" aria-label="Cian"></button>
+            <button class="color-dot" style="background:var(--color-cat-7);" aria-label="Verde"></button>
+            <button class="color-dot" style="background:var(--color-cat-8);" aria-label="Gris"></button>
+          </div>
+        </div>
+        <span class="state-label">Selector de color (radiogroup)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TARJETAS Y BADGES
+       ============================================================ -->
+  <section class="guide-section" id="cards">
+    <h2>Tarjetas y badges de categoría</h2>
+    <p class="lead">Ver DESIGN.md §3.3 y §3.5.</p>
+
+    <div class="grid grid-cols-3">
+      <div class="card card-highlight">
+        <div class="type-h4" style="color:var(--color-primary);">Total del periodo</div>
+        <div class="type-hero tabular" style="margin-top:.4rem;">$ 1.234,50</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="type-h2">Por categoría</span></div>
+        <div style="display:flex; flex-direction:column; gap:.5rem;">
+          <span class="cat-badge"><span class="dot" style="background:var(--color-cat-1);"></span>Comida</span>
+          <span class="cat-badge"><span class="dot" style="background:var(--color-cat-2);"></span>Transporte</span>
+          <span class="cat-badge"><span class="dot" style="background:var(--color-cat-7);"></span>Educación</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="type-h2">Categoría (fila densa)</span></div>
+        <div style="display:flex; flex-direction:column; gap:.6rem;">
+          <span class="cat-badge-sm"><span class="dot" style="background:var(--color-cat-3);"></span>Vivienda</span>
+          <span class="cat-badge-sm"><span class="dot" style="background:var(--color-cat-4);"></span>Salud</span>
+          <span class="cat-badge-sm"><span class="dot" style="background:var(--color-cat-5);"></span>Ocio</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TABLA / LISTA DE GASTOS
+       ============================================================ -->
+  <section class="guide-section" id="table">
+    <h2>Lista de gastos</h2>
+    <p class="lead">Tabla en escritorio, tarjetas apiladas en móvil. Ver DESIGN.md §3.4.</p>
+
+    <h3 class="sub">Escritorio</h3>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="expenses">
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Categoría</th><th>Nota</th><th class="num">Monto</th><th style="text-align:center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="muted tabular">15 jul</td>
+            <td><span class="cat-badge-sm"><span class="dot" style="background:var(--color-cat-1);"></span>Comida</span></td>
+            <td>Almuerzo con el equipo</td>
+            <td class="amount tabular">$ 42,50</td>
+            <td style="text-align:center;">
+              <button class="icon-btn" aria-label="Editar"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="icon-btn danger" aria-label="Eliminar"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </td>
+          </tr>
+          <tr>
+            <td class="muted tabular">14 jul</td>
+            <td><span class="cat-badge-sm"><span class="dot" style="background:var(--color-cat-2);"></span>Transporte</span></td>
+            <td class="muted">—</td>
+            <td class="amount tabular">$ 8,20</td>
+            <td style="text-align:center;">
+              <button class="icon-btn" aria-label="Editar"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="icon-btn danger" aria-label="Eliminar"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">Móvil</h3>
+    <div style="display:flex; flex-direction:column; gap:.5rem; max-width:24rem;">
+      <div class="expense-row-mobile">
+        <div class="left">
+          <span class="avatar" style="background:color-mix(in srgb, var(--color-cat-1) 20%, var(--color-surface-sunken));">
+            <span style="width:.6rem;height:.6rem;border-radius:999px;background:var(--color-cat-1);display:inline-block;"></span>
+          </span>
+          <div>
+            <div class="title">Almuerzo con el equipo</div>
+            <div class="sub">15 jul</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="amount tabular">$ 42,50</div>
+          <div class="sub">Comida</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       NAVEGACIÓN
+       ============================================================ -->
+  <section class="guide-section" id="nav">
+    <h2>Navegación</h2>
+    <p class="lead">Sidebar de escritorio y tab bar inferior de móvil. Ver DESIGN.md §3.7.</p>
+
+    <div class="state-row" style="align-items:flex-start;">
+      <div class="state-item">
+        <div class="sidebar-demo">
+          <div class="sb-head"><span class="dot"></span>gestor-gastos</div>
+          <nav class="sb-nav">
+            <span class="sb-link active">Dashboard</span>
+            <span class="sb-link">Gastos</span>
+            <span class="sb-link">Categorías</span>
+          </nav>
+          <div class="sb-foot">
+            <span class="avatar-init">AN</span>
+            <span style="font-size:.8rem;font-weight:500;">Ana</span>
+          </div>
+        </div>
+        <span class="state-label">Sidebar (md+)</span>
+      </div>
+
+      <div class="state-item">
+        <div class="tabbar-demo">
+          <div class="tab-item active">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 12l9-9 9 9M5 10v10h14V10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Dashboard
+          </div>
+          <div class="tab-item">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.75"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.75"/></svg>
+            Gastos
+          </div>
+          <div class="tab-item">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+            Categorías
+          </div>
+        </div>
+        <span class="state-label">Tab bar (móvil)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TOASTS
+       ============================================================ -->
+  <section class="guide-section" id="toasts">
+    <h2>Toasts</h2>
+    <p class="lead">Ver DESIGN.md §3.8. El color nunca es el único indicador: icono y texto distintos en cada tipo.</p>
+    <div style="display:flex; flex-direction:column; gap:.75rem; max-width:24rem;">
+      <div class="toast toast-success" role="status">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Gasto guardado correctamente.
+      </div>
+      <div class="toast toast-danger" role="alert">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        No se pudo guardar el gasto. Intentá de nuevo.
+      </div>
+      <div class="toast toast-warning" role="alert">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 20h20L12 3Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        Esta categoría tiene gastos asociados.
+      </div>
+      <div class="toast toast-info" role="status">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        Tu sesión vence en 5 minutos.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MODAL
+       ============================================================ -->
+  <section class="guide-section" id="modal">
+    <h2>Modal / diálogo</h2>
+    <p class="lead">Ver DESIGN.md §3.6.</p>
+    <div class="modal-demo-wrap">
+      <div class="modal-overlay">
+        <div class="modal-panel" role="dialog" aria-modal="true">
+          <div class="modal-head">
+            <h4>Añadir gasto</h4>
+            <button class="icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="field" style="max-width:none;">
+              <label for="m1">Monto <span class="req">*</span></label>
+              <input id="m1" type="text" placeholder="0.00">
+            </div>
+            <div class="field" style="max-width:none;">
+              <label for="m2">Fecha <span class="req">*</span></label>
+              <input id="m2" type="text" value="17/07/2026">
+            </div>
+            <div class="field" style="max-width:none;">
+              <label for="m3">Categoría <span class="req">*</span></label>
+              <select id="m3"><option>Comida</option></select>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn btn-secondary">Cancelar</button>
+            <button class="btn btn-primary">Guardar gasto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ESTADOS VACÍO / ERROR / CARGA
+       ============================================================ -->
+  <section class="guide-section" id="states">
+    <h2>Estados vacíos, de error y de carga</h2>
+    <p class="lead">Ver DESIGN.md §3.9.</p>
+
+    <div class="grid grid-cols-3">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg>
+        <div class="title">Sin gastos en este periodo</div>
+        <div class="desc">Ajustá el rango de fechas o el filtro de categoría, o añadí un gasto nuevo.</div>
+        <button class="btn btn-primary" style="margin-top:.4rem;">+ Añadir gasto</button>
+      </div>
+
+      <div class="error-state" role="alert">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 20h20L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div class="title">No se pudo cargar la información.</div>
+        <div class="desc">Comprobá tu conexión e intentalo de nuevo.</div>
+        <button class="btn btn-secondary" style="margin-top:.4rem;">Reintentar</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="type-h2">Skeleton</span></div>
+        <div style="display:flex; flex-direction:column; gap:.5rem;">
+          <div class="skeleton" style="height:1rem; width:60%;"></div>
+          <div class="skeleton" style="height:1rem; width:90%;"></div>
+          <div class="skeleton" style="height:1rem; width:40%;"></div>
+          <div class="skeleton" style="height:3.5rem; width:100%; margin-top:.5rem;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="guide-footer">
+  gestor-gastos — guía de estilos generada a partir de DESIGN.md. Página estática, sin dependencias de build.
+</footer>
+
+<script>
+  // Alterna manualmente color-scheme para inspeccionar ambos modos;
+  // sin esto, light-dark() solo sigue la preferencia del sistema.
+  var toggle = document.getElementById('themeToggle');
+  var label = document.getElementById('themeToggleLabel');
+  var modes = ['auto', 'light', 'dark'];
+  var labels = { auto: 'Modo: automático (sistema)', light: 'Modo: claro', dark: 'Modo: oscuro' };
+  var current = 'auto';
+
+  function applyMode(mode) {
+    if (mode === 'auto') {
+      document.documentElement.style.colorScheme = '';
+    } else {
+      document.documentElement.style.colorScheme = mode;
+    }
+    label.textContent = labels[mode];
+    toggle.setAttribute('aria-pressed', mode !== 'auto');
+  }
+
+  toggle.addEventListener('click', function () {
+    var idx = (modes.indexOf(current) + 1) % modes.length;
+    current = modes[idx];
+    applyMode(current);
+  });
+
+  // Tarjetas de paleta: el fondo usa var(--color-*) real (así refleja el
+  // toggle claro/oscuro); el texto hex es informativo, tomado de DESIGN.md §1.3.
+  var brandTokens = [
+    ['--color-surface', 'surface', 'Fondo de página', '#fafafa', '#18181b'],
+    ['--color-surface-raised', 'surface-raised', 'Tarjetas, modal, header', '#ffffff', '#27272a'],
+    ['--color-surface-sunken', 'surface-sunken', 'Input, skeleton', '#f4f4f5', '#3f3f46'],
+    ['--color-ink', 'ink', 'Texto principal', '#18181b', '#fafafa'],
+    ['--color-ink-muted', 'ink-muted', 'Texto secundario', '#52525b', '#a1a1aa'],
+    ['--color-line', 'line', 'Bordes, divisores', '#e4e4e7', '#3f3f46'],
+    ['--color-primary', 'primary', 'Acciones, foco, activo', '#4f46e5', '#818cf8'],
+    ['--color-primary-strong', 'primary-strong', 'Hover de marca', '#4338ca', '#a5b4fc'],
+    ['--color-primary-soft', 'primary-soft', 'Selección, fondo activo', '#e0e7ff', '#1e1b4b'],
+    ['--color-accent', 'accent', 'Acento monetario', '#059669', '#34d399']
+  ];
+
+  var semanticTokens = [
+    ['--color-success', 'success', 'Confirmaciones', '#059669', '#34d399'],
+    ['--color-danger', 'danger', 'Errores, borrar', '#dc2626', '#f87171'],
+    ['--color-warning', 'warning', 'Avisos', '#d97706', '#fbbf24'],
+    ['--color-info', 'info', 'Informativo', '#0891b2', '#22d3ee']
+  ];
+
+  var catTokens = [
+    ['--color-cat-1', 'cat-1', 'Comida', '#f97316', '#f97316'],
+    ['--color-cat-2', 'cat-2', 'Transporte', '#3b82f6', '#3b82f6'],
+    ['--color-cat-3', 'cat-3', 'Vivienda', '#8b5cf6', '#8b5cf6'],
+    ['--color-cat-4', 'cat-4', 'Salud', '#f43f5e', '#f43f5e'],
+    ['--color-cat-5', 'cat-5', 'Ocio', '#eab308', '#eab308'],
+    ['--color-cat-6', 'cat-6', 'Servicios', '#06b6d4', '#06b6d4'],
+    ['--color-cat-7', 'cat-7', 'Educación', '#10b981', '#10b981'],
+    ['--color-cat-8', 'cat-8', 'Otros', '#71717a', '#71717a']
+  ];
+
+  function renderSwatches(containerId, tokens) {
+    var container = document.getElementById(containerId);
+    tokens.forEach(function (t) {
+      var varName = t[0], name = t[1], role = t[2], light = t[3], dark = t[4];
+      var card = document.createElement('div');
+      card.className = 'swatch-card';
+      var fill = document.createElement('div');
+      fill.className = 'swatch-fill';
+      fill.style.background = 'var(' + varName + ')';
+      if (name === 'surface' || name === 'surface-raised') {
+        fill.style.borderBottom = '1px solid var(--color-line)';
+      }
+      var meta = document.createElement('div');
+      meta.className = 'swatch-meta';
+      meta.innerHTML = '<div class="name">' + name + '</div>' +
+        '<div class="role">' + role + '</div>' +
+        '<div class="hex"><span>' + light + '</span><span>' + dark + '</span></div>';
+      card.appendChild(fill);
+      card.appendChild(meta);
+      container.appendChild(card);
+    });
+  }
+
+  renderSwatches('swatches-brand', brandTokens);
+  renderSwatches('swatches-semantic', semanticTokens);
+  renderSwatches('swatches-cat', catTokens);
+</script>
+
+</body>
+</html>
