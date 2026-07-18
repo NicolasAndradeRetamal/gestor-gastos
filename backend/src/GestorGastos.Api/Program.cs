@@ -91,10 +91,11 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
+app.UseSwagger();
+app.UseSwaggerUI();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
     app.UseCors(DevCorsPolicy);
 }
 
@@ -104,6 +105,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
 using (var scope = app.Services.CreateScope())
 {

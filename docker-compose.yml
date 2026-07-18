@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gestor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gestor}
+      POSTGRES_DB: ${POSTGRES_DB:-gestor_gastos}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gestor} -d ${POSTGRES_DB:-gestor_gastos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB:-gestor_gastos};Username=${POSTGRES_USER:-gestor};Password=${POSTGRES_PASSWORD:-gestor}"
+      Jwt__Secret: ${JWT_SECRET:?JWT_SECRET no está definido (copia .env.example a .env)}
+      Jwt__Issuer: ${JWT_ISSUER:-GestorGastos}
+      Jwt__Audience: ${JWT_AUDIENCE:-GestorGastos}
+      Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-5080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
