@@ -57,7 +57,7 @@ watch(
 
 function fieldError(field: string): string | undefined {
   if (field === 'name' && props.error?.status === 409) {
-    return 'Ya tenés una categoría con ese nombre.'
+    return 'Ya tienes una categoría con ese nombre.'
   }
   return props.error?.errors?.[field]?.[0]
 }
