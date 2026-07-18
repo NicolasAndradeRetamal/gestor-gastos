@@ -5,6 +5,15 @@ movimientos por categoría, panel de resumen con gráficos y filtros por fecha y
 categoría. Proyecto fullstack con API REST en ASP.NET Core, base de datos
 PostgreSQL y cliente SPA en Vue 3, todo orquestado con Docker Compose.
 
+## Demo
+
+<!-- TODO: reemplazar con la URL real tras aplicar el Blueprint en Render -->
+Próximamente en línea (Render + Neon). Mientras tanto, la app completa levanta
+en local con un comando (ver [Puesta en marcha](#puesta-en-marcha-con-docker)).
+
+> La instancia gratuita de la API se apaga tras 15 minutos sin tráfico: la
+> primera petición después de un rato de inactividad puede tardar ~1 minuto.
+
 ## Funcionalidades
 
 - **Autenticación** con JWT: registro e inicio de sesión.
@@ -104,6 +113,22 @@ gestor-gastos/
 ├── docker-compose.yml      # base de datos + API + web
 └── .github/workflows/      # CI
 ```
+
+## Despliegue (Render + Neon)
+
+El repo incluye un [Blueprint de Render](render.yaml) que define los dos
+servicios: la API (contenedor Docker, plan free) y el frontend (sitio estático
+con rewrite de `/api/*` hacia la API, sin necesidad de CORS). La base de datos
+vive en [Neon](https://neon.tech) (PostgreSQL serverless con plan gratuito
+permanente); la API aplica las migraciones automáticamente al arrancar.
+
+1. **Neon**: crea un proyecto PostgreSQL y copia la connection string en
+   formato **.NET / Npgsql** (incluye `Ssl Mode=Require`).
+2. **Render**: *New → Blueprint*, conecta este repositorio y aplica
+   `render.yaml`. Cuando pida `ConnectionStrings__Default`, pega la connection
+   string de Neon (el `Jwt__Secret` se genera solo).
+3. Al terminar el deploy, la app queda en la URL del servicio
+   `gestor-gastos-web`.
 
 ## Variables de entorno
 
