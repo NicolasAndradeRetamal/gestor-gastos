@@ -28,9 +28,13 @@ public class DashboardController(AppDbContext db) : ControllerBase
 
         var byCategoryRaw = await expenses
             .GroupBy(e => new { e.CategoryId, e.Category!.Name, e.Category!.Color })
-            .Select(g => new CategoryTotalDto(g.Key.CategoryId, g.Key.Name, g.Key.Color, g.Sum(e => e.Amount)))
+            .Select(g => new { g.Key.CategoryId, g.Key.Name, g.Key.Color, Total = g.Sum(e => e.Amount) })
             .OrderByDescending(c => c.Total)
             .ToListAsync(ct);
+
+        var byCategory = byCategoryRaw
+            .Select(c => new CategoryTotalDto(c.CategoryId, c.Name, c.Color, c.Total))
+            .ToList();
 
         var byMonthRaw = await expenses
             .GroupBy(e => new { e.SpentAt.Year, e.SpentAt.Month })
@@ -42,6 +46,6 @@ public class DashboardController(AppDbContext db) : ControllerBase
             .Select(g => new MonthTotalDto($"{g.Year:D4}-{g.Month:D2}", g.Total))
             .ToList();
 
-        return Ok(new DashboardSummaryDto(total, byCategoryRaw, byMonth));
+        return Ok(new DashboardSummaryDto(total, byCategory, byMonth));
     }
 }
