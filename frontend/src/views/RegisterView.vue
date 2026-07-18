@@ -30,8 +30,8 @@
       </BaseButton>
     </form>
     <template #footer>
-      ¿Ya tenés cuenta?
-      <RouterLink :to="{ name: 'login' }" class="font-semibold text-primary">Iniciá sesión</RouterLink>
+      ¿Ya tienes cuenta?
+      <RouterLink :to="{ name: 'login' }" class="font-semibold text-primary">Inicia sesión</RouterLink>
     </template>
   </AuthLayout>
 </template>

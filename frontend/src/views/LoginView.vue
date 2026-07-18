@@ -22,8 +22,8 @@
       </BaseButton>
     </form>
     <template #footer>
-      ¿No tenés cuenta?
-      <RouterLink :to="{ name: 'register' }" class="font-semibold text-primary">Registrate</RouterLink>
+      ¿No tienes cuenta?
+      <RouterLink :to="{ name: 'register' }" class="font-semibold text-primary">Regístrate</RouterLink>
     </template>
   </AuthLayout>
 </template>
