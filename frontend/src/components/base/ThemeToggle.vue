@@ -6,9 +6,7 @@
     :icon="icon"
     :aria-label="label"
     @click="toggle"
-  >
-    {{ label }}
-  </BaseButton>
+  />
   <button
     v-else
     type="button"

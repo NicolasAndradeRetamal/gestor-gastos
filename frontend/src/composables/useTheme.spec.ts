@@ -43,6 +43,7 @@ describe('useTheme', () => {
 
   afterEach(() => {
     delete document.documentElement.dataset.theme
+    vi.restoreAllMocks()
   })
 
   it('starts from the system preference when there is no stored override', async () => {
@@ -99,5 +100,52 @@ describe('useTheme', () => {
     // System reports light again, but the manual override must stick.
     emitSystemChange(false)
     expect(wrapper.vm.theme).toBe('dark')
+  })
+
+  it('does not break when localStorage.getItem throws (private mode, blocked storage), falling back to the system', async () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+    stubMatchMedia(true)
+
+    const wrapper = await mountTheme()
+
+    expect(wrapper.vm.theme).toBe('dark')
+  })
+
+  it('does not break when localStorage.setItem throws on toggle', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+    stubMatchMedia(false)
+
+    const wrapper = await mountTheme()
+
+    expect(() => wrapper.vm.toggle()).not.toThrow()
+    expect(wrapper.vm.theme).toBe('dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('does not break when matchMedia throws, falling back to light and skipping the live listener', async () => {
+    window.matchMedia = vi.fn(() => {
+      throw new Error('matchMedia unavailable')
+    }) as unknown as typeof window.matchMedia
+
+    const wrapper = await mountTheme()
+
+    expect(wrapper.vm.theme).toBe('light')
+  })
+
+  it('does not break when matchMedia is missing entirely', async () => {
+    const original = window.matchMedia
+    // @ts-expect-error simulating an environment without matchMedia support
+    delete window.matchMedia
+
+    try {
+      const wrapper = await mountTheme()
+      expect(wrapper.vm.theme).toBe('light')
+    } finally {
+      window.matchMedia = original
+    }
   })
 })

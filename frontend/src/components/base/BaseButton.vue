@@ -48,7 +48,8 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   ghost: 'text-primary font-semibold hover:bg-primary-soft px-2 py-1 disabled:hover:bg-transparent',
   'ghost-danger':
     'text-danger font-semibold hover:bg-danger-soft px-2 py-1 disabled:hover:bg-transparent focus-visible:outline-danger',
-  'ghost-muted': 'text-ink-muted hover:bg-surface-sunken disabled:hover:bg-transparent',
+  'ghost-muted':
+    'text-ink-muted font-semibold hover:bg-surface-sunken px-2 py-1 disabled:hover:bg-transparent',
 }
 
 const classes = computed(() => [

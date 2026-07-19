@@ -4,13 +4,36 @@ export type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'theme'
 
+// localStorage can throw (SecurityError) with storage blocked — private mode,
+// a sandboxed iframe, browser settings — not just in SSR; never let that throw
+// at module scope, or the whole app fails to mount.
 function readStoredTheme(): Theme | null {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  return stored === 'light' || stored === 'dark' ? stored : null
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored === 'light' || stored === 'dark' ? stored : null
+  } catch {
+    return null
+  }
+}
+
+function persistTheme(value: Theme): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, value)
+  } catch {
+    // Storage unavailable: the choice just won't survive a reload.
+  }
+}
+
+function getMediaQueryList(): MediaQueryList | null {
+  try {
+    return window.matchMedia?.('(prefers-color-scheme: dark)') ?? null
+  } catch {
+    return null
+  }
 }
 
 function systemPrefersDark(): boolean {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
+  return getMediaQueryList()?.matches ?? false
 }
 
 function resolveActiveTheme(): Theme {
@@ -25,11 +48,11 @@ function toggle(): void {
   const next: Theme = theme.value === 'dark' ? 'light' : 'dark'
   theme.value = next
   document.documentElement.dataset.theme = next
-  localStorage.setItem(STORAGE_KEY, next)
+  persistTheme(next)
 }
 
 export function useTheme(): { theme: Ref<Theme>; toggle: () => void } {
-  const media = window.matchMedia('(prefers-color-scheme: dark)')
+  const media = getMediaQueryList()
 
   // Follows the OS preference live, but only while the user never overrode it manually.
   function onSystemChange(event: MediaQueryListEvent): void {
@@ -38,8 +61,10 @@ export function useTheme(): { theme: Ref<Theme>; toggle: () => void } {
     }
   }
 
-  onMounted(() => media.addEventListener('change', onSystemChange))
-  onBeforeUnmount(() => media.removeEventListener('change', onSystemChange))
+  if (media) {
+    onMounted(() => media.addEventListener('change', onSystemChange))
+    onBeforeUnmount(() => media.removeEventListener('change', onSystemChange))
+  }
 
   return { theme, toggle }
 }

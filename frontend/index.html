@@ -7,10 +7,16 @@
     <title>Gestor de Gastos</title>
     <script>
       // Applies a saved manual theme before first paint to avoid a flash of the wrong theme.
+      // Wrapped in try/catch: localStorage can throw (private mode, blocked storage) and
+      // must never break app mount — falls back to following the system theme.
       (function () {
-        var stored = localStorage.getItem('theme')
-        if (stored === 'light' || stored === 'dark') {
-          document.documentElement.dataset.theme = stored
+        try {
+          var stored = localStorage.getItem('theme')
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.dataset.theme = stored
+          }
+        } catch (e) {
+          // Storage unavailable: keep following prefers-color-scheme.
         }
       })()
     </script>
