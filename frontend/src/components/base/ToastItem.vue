@@ -6,7 +6,7 @@
   >
     <AppIcon :name="ICONS[toast.type]" class="size-5 shrink-0" :class="ICON_COLOR_CLASSES[toast.type]" />
     <p class="flex-1 text-sm text-ink">{{ toast.message }}</p>
-    <BaseButton variant="ghost" icon-only icon="close" size="compact" aria-label="Cerrar notificación" @click="emit('dismiss')">
+    <BaseButton variant="ghost" icon-only icon="close" aria-label="Cerrar notificación" @click="emit('dismiss')">
       Cerrar
     </BaseButton>
   </div>

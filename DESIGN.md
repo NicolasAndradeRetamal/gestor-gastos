@@ -44,20 +44,74 @@ Principios de diseño:
 
 ### 1.2 Modos de color
 
-**Modo claro y modo oscuro, ambos soportados desde el inicio, siguiendo la
-preferencia del sistema (`prefers-color-scheme`) sin selector manual en el
-MVP.**
+**Modo claro y modo oscuro, ambos soportados desde el inicio, con
+conmutador manual explícito.** El estado inicial respeta la preferencia del
+sistema (`prefers-color-scheme`); a partir de ahí, el usuario puede alternar
+el tema con un control siempre visible (`ThemeToggle`, §3.10) y su elección
+se recuerda entre sesiones.
 
-Justificación: la app se usa a cualquier hora del día para un gasto puntual, y
-el modo oscuro es una expectativa estándar en herramientas financieras
-actuales; además, expresar toda la paleta con la función `light-dark()` de CSS
-dentro de tokens `@theme` de Tailwind 4 no añade componentes ni estado nuevo
-al cliente — cada color se define una sola vez y los componentes solo usan
-utilidades semánticas (`bg-surface`, `text-ink`, …), nunca variantes `dark:`
-repetidas. El costo es bajo y el resultado es coherente en ambos modos, así
-que se incluye sin recortar alcance. Un selector manual (o persistencia de
-preferencia) queda fuera del MVP: no aporta valor de portafolio adicional
-sobre respetar la preferencia del sistema.
+Justificación de fondo: la app se usa a cualquier hora del día para un gasto
+puntual, y el modo oscuro es una expectativa estándar en herramientas
+financieras actuales; además, expresar toda la paleta con la función
+`light-dark()` de CSS dentro de tokens `@theme` de Tailwind 4 no añade
+componentes ni estado nuevo al cliente para el *contenido* del tema — cada
+color se define una sola vez y los componentes solo usan utilidades
+semánticas (`bg-surface`, `text-ink`, …), nunca variantes `dark:` repetidas.
+Lo único que se añade es el mecanismo de *override* descrito abajo.
+
+**Patrón elegido: toggle binario claro ↔ oscuro que arranca desde el
+sistema** (no un selector de tres estados claro/oscuro/sistema).
+Justificación: con solo dos temas definidos, un botón simple con icono
+sol/luna cubre el caso de uso completo — elegir el tema y recordarlo — con
+menos superficie de interfaz que un menú de tres opciones; encaja mejor con
+el alcance y la sobriedad de un proyecto de portafolio. Contrapartida
+aceptada: una vez que el usuario elige manualmente, la app deja de seguir
+cambios posteriores del sistema en vivo hasta que vuelva a tocar el control
+— comportamiento estándar y esperado de un toggle binario.
+
+**Mecanismo:**
+
+- **Persistencia**: `localStorage`, clave `theme`, valores `'light' | 'dark'`.
+  Ausencia de la clave significa que el usuario nunca tocó el control, y la
+  app sigue el sistema.
+- **Estado inicial sin parpadeo ("flash")**: un script mínimo, inline y
+  bloqueante en el `<head>` de `index.html` (antes de cargar el bundle de la
+  SPA) lee `localStorage.getItem('theme')`; si el valor es `'light'` o
+  `'dark'`, fija `document.documentElement.dataset.theme` a ese valor **antes
+  del primer paint**. Si no hay valor guardado, no fija el atributo y el
+  documento sigue el sistema vía `color-scheme: light dark` en `:root`
+  (§2) — sin necesidad de JavaScript adicional para ese caso. Ejemplo:
+
+  ```html
+  <!-- index.html, dentro de <head>, antes del script de la SPA -->
+  <script>
+    (function () {
+      var stored = localStorage.getItem('theme');
+      if (stored === 'light' || stored === 'dark') {
+        document.documentElement.dataset.theme = stored;
+      }
+    })();
+  </script>
+  ```
+
+- **Aplicación del override**: el atributo `data-theme="light" | "dark"` en
+  `<html>` activa una regla CSS que fija `color-scheme` a un único valor (ver
+  bloque en §2), de modo que la función `light-dark()` de cada token resuelve
+  siempre a esa rama. Los componentes no cambian su implementación: siguen
+  usando solo utilidades semánticas (`bg-surface`, `text-ink`, `border-line`,
+  …), nunca variantes `dark:`. Sin el atributo `data-theme`, `color-scheme:
+  light dark` en `:root` deja que el navegador siga `prefers-color-scheme` en
+  vivo, incluida la actualización automática si el usuario cambia el tema del
+  sistema operativo sin haber elegido nunca manualmente.
+- **Cambio manual**: al pulsar `ThemeToggle` (§3.10), la lógica de la SPA (un
+  composable tipo `useTheme` o el store que el frontend prefiera) determina
+  el tema visual activo — lee `data-theme` si ya existe; si no, consulta
+  `matchMedia('(prefers-color-scheme: dark)').matches` — aplica el opuesto
+  fijando `data-theme` en `<html>` y lo persiste en `localStorage`. Desde ese
+  momento el tema queda fijo en la elección explícita del usuario.
+- El control es parte del layout persistente (pie del sidebar en escritorio,
+  menú de usuario en móvil, §3.7) — no vive dentro de una vista de
+  "Configuración", que no existe en el alcance actual (§4.6).
 
 ### 1.3 Paleta de colores
 
@@ -242,6 +296,16 @@ adicional para el tema):
   color-scheme: light dark;
 }
 
+/* Override manual de tema: fijado por ThemeToggle (§3.10) vía data-theme
+   en <html>. Sin el atributo, se sigue prefers-color-scheme (regla de arriba). */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 body {
   @apply bg-surface text-ink antialiased;
   font-feature-settings: "tnum" 1;
@@ -308,9 +372,31 @@ es limitado, nunca como único control de una acción destructiva importante.
 | **Peligro** (`Eliminar gasto`, `Eliminar categoría`) | `bg-danger text-white` | `hover:bg-red-700` (10% más oscuro) | anillo global (`outline-danger` en vez de `outline-primary` para este botón) | `active:scale-[0.98]` | `disabled:opacity-50` | igual patrón, spinner en `text-white` |
 | **Fantasma / texto** (acciones terciarias, `Editar`, enlaces de tabla) | `text-primary font-semibold` sin fondo | `hover:bg-primary-soft` (padding propio `px-2 py-1 rounded-md`) | anillo global | `active:scale-[0.98]` | `disabled:opacity-50 disabled:hover:bg-transparent` | spinner inline `size-4` reemplazando el icono si lo tiene |
 
-Icono opcional a la izquierda del texto, `size-4` (`aria-hidden="true"`), el
-texto siempre visible salvo en botones icon-only (p. ej. cerrar modal), que
-llevan `aria-label` explícito y `size-10` mínimo de área táctil.
+Icono opcional a la izquierda del texto, `size-4` (16px, `aria-hidden="true"`),
+el texto siempre visible salvo en botones **icon-only** (p. ej. cerrar modal,
+acciones de tabla, `ThemeToggle`), que llevan `aria-label` explícito en vez de
+texto visible.
+
+**Botón icon-only — tamaño por defecto.** Área táctil `size-11` (44×44px,
+`px-0 shrink-0`) con icono `size-5` (20px) centrado. Es el tamaño por defecto
+de todo botón de solo icono de la app: cerrar modal (§3.6), cerrar sesión y
+`ThemeToggle` en la navegación (§3.7), cerrar toast (§3.8). Un icono más
+pequeño dentro de esa misma área de 44px es un defecto de diseño, no un
+detalle — el objetivo no es solo el área de toque sino que el icono se
+perciba con claridad a esa distancia de lectura.
+
+**Botón icon-only — variante compacta (excepción documentada).** Área `size-8`
+(32px) con icono `size-4` (16px), **únicamente** para acciones repetidas por
+fila dentro de tablas y toolbars densos de escritorio (`md:` y superior),
+donde varias acciones por fila compiten por espacio horizontal — ver
+`Editar`/`Eliminar` en la tabla de gastos, §3.4. Es una excepción consciente
+y acotada al mínimo general de 44×44px (§5), no la regla general: se justifica
+por densidad visual en un contexto exclusivo de escritorio, ya que la vista
+equivalente en móvil usa tarjetas apiladas con toda la fila como área de
+toque (§3.4), donde el objetivo táctil de 44px se sigue cumpliendo. Esta
+variante no se usa para una acción aislada, una acción destructiva sin
+alternativa, ni en ningún control de navegación o layout persistente
+(sidebar, topbar, tab bar, `ThemeToggle`).
 
 ### 3.2 Inputs y selects de formulario
 
@@ -395,7 +481,8 @@ la tarjeta contenedora:
   - Monto: `text-right font-semibold tabular-nums text-ink`.
   - Acciones: botones fantasma icon-only `Editar` (lápiz) y `Eliminar`
     (papelera, variante peligro fantasma: `text-danger hover:bg-danger-soft`),
-    `size-8` cada uno, con `aria-label`.
+    variante compacta de §3.1 (`size-8`, icono `size-4`) por ser acciones
+    repetidas por fila en una tabla de escritorio, con `aria-label`.
 - Paginación bajo la tabla: `flex items-center justify-between mt-4 text-sm text-ink-muted`,
   texto `Mostrando {from}–{to} de {totalItems}` a la izquierda, botones
   secundarios compactos `Anterior` / `Siguiente` (`disabled` en los extremos)
@@ -437,7 +524,8 @@ borrado. Un solo modal a la vez.
   (nunca pantalla completa sin bordes, para conservar la sensación de
   diálogo).
 - **Cabecera**: `flex items-center justify-between mb-4` — título `H2` +
-  botón cerrar icon-only (`×`, `size-10`, `aria-label="Cerrar"`).
+  botón cerrar icon-only (`×`, tamaño por defecto de §3.1 — `size-11`,
+  icono `size-5`, `aria-label="Cerrar"`).
 - **Cuerpo**: formulario en `space-y-4` (alta/edición) o texto de
   confirmación `text-sm text-ink-muted` (borrado).
 - **Pie**: `flex items-center justify-end gap-3 mt-6` — botón secundario
@@ -472,15 +560,18 @@ borrado. Un solo modal a la vez.
 - Pie del sidebar: tarjeta de usuario — avatar circular con iniciales
   (`size-9 rounded-full bg-primary-soft text-primary font-semibold flex items-center justify-center text-sm`)
   + `displayName` (`text-sm font-medium truncate`) + botón `Cerrar sesión`
-  (fantasma, icono, `aria-label`), `mt-auto border-t border-line p-3 flex items-center gap-3`.
+  (fantasma icon-only, tamaño por defecto de §3.1 — `size-11`, icono `size-5`,
+  `aria-label="Cerrar sesión"`) + `ThemeToggle` (§3.10, mismo tamaño), en ese
+  orden de izquierda a derecha tras el nombre; todo dentro de
+  `mt-auto border-t border-line p-3 flex items-center gap-3`.
 
 **Móvil (`< md`)** — barra inferior fija de navegación (los tres destinos
 principales) + topbar simple:
 
 - Topbar: `h-14 flex items-center justify-between px-4 border-b border-line bg-surface-raised sticky top-0 z-10` —
   nombre de la vista actual (`H1` reducido a `text-lg font-bold`) a la
-  izquierda, avatar del usuario (botón, abre menú con `Cerrar sesión`) a la
-  derecha, `size-9`.
+  izquierda, avatar del usuario (botón, abre menú con `Cerrar sesión` y
+  `ThemeToggle`, §3.10) a la derecha, `size-9`.
 - Tab bar inferior: `fixed inset-x-0 bottom-0 z-10 flex border-t border-line bg-surface-raised pb-[env(safe-area-inset-bottom)]`,
   tres botones iguales (`Dashboard`, `Gastos`, `Categorías`)
   `flex-1 flex flex-col items-center justify-center gap-0.5 h-16 text-xs font-medium text-ink-muted`
@@ -500,7 +591,9 @@ máximo 3 visibles). Cada toast:
 
 `flex items-start gap-3 w-full sm:w-96 rounded-lg border p-4 shadow-raised`,
 con icono `size-5 shrink-0` (`aria-hidden`) + texto `text-sm text-ink flex-1` +
-botón cerrar icon-only `size-8` opcional. `role="status"` (éxito/info) o
+botón cerrar icon-only opcional, tamaño por defecto de §3.1 (`size-11`, icono
+`size-5`; al ser una acción independiente y no una fila de tabla, no aplica
+la variante compacta). `role="status"` (éxito/info) o
 `role="alert"` (error/warning) para que el lector de pantalla lo anuncie sin
 esperar foco. Auto-descarta a los 5s (éxito/info) o permanece hasta que el
 usuario lo cierre (error).
@@ -550,6 +643,47 @@ e inténtalo de nuevo.`, botón secundario `Reintentar`. `role="alert"`.
   `sr-only` `Cargando…`.
 - **Botones**: patrón de §3.1 (spinner reemplaza el contenido, `aria-busy`,
   se deshabilita mientras carga).
+
+### 3.10 Conmutador de tema (`ThemeToggle`)
+
+Botón icon-only que alterna entre modo claro y modo oscuro (mecanismo
+completo en §1.2). Usa el tamaño **por defecto** de icon-only de §3.1: área
+táctil `size-11` (44×44px), icono `size-5` (20px) — nunca la variante
+compacta, por ser un control de navegación persistente, no una acción de
+fila de tabla.
+
+- **Icono**: sol / luna — dos íconos nuevos a sumar al set de `AppIcon`
+  (`sun`, `moon`). El icono mostrado representa el modo **activo** (sol si el
+  tema activo es claro, luna si es oscuro), no el modo destino: es la
+  convención más frecuente en este tipo de control y la menos ambigua para
+  quien no está familiarizado con el patrón.
+- **`aria-label`**: dinámico según el modo activo — `Cambiar a modo oscuro`
+  cuando el tema activo es claro, `Cambiar a modo claro` cuando el tema
+  activo es oscuro (nunca un texto estático como "Cambiar tema", que no
+  informa el resultado de la acción).
+- **Estados** (mismo patrón fantasma que §3.1):
+
+| Estado | Especificación |
+|---|---|
+| Reposo | `text-ink-muted`, sin fondo |
+| Hover | `hover:bg-surface-sunken` |
+| Focus | anillo global (§2) |
+| Activo/presionado | `active:scale-[0.98]` |
+| Deshabilitado | no aplica — el control está siempre disponible |
+| Carga | no aplica — el cambio de tema es síncrono, sin espera de red |
+
+- **Ubicación**:
+  - **Escritorio** (`md:` y superior): pie del sidebar (§3.7), en el mismo
+    contenedor que la tarjeta de usuario y el botón `Cerrar sesión`
+    (`mt-auto border-t border-line p-3 flex items-center gap-3`), a la
+    derecha del todo, después del botón `Cerrar sesión`.
+  - **Móvil** (`< md`): dentro del menú de usuario que abre el avatar de la
+    topbar (§3.7), como una fila más del menú (`role="menuitem"`, mismo
+    patrón visual que la fila `Cerrar sesión`), con el icono sol/luna a la
+    izquierda y el texto `Modo claro` / `Modo oscuro` (el modo al que cambia
+    al tocar, coherente con el texto de acción del resto del menú).
+- El estado nunca depende únicamente del color: el icono cambia de forma
+  (sol ↔ luna) y el `aria-label`/texto visible cambian junto con él.
 
 ---
 
@@ -757,7 +891,17 @@ rutas/vistas si se prefiere otro enfoque (p. ej. un panel dentro de
   `outline-none` sin reemplazo equivalente.
 - **Objetivos táctiles**: mínimo 44×44px en todo elemento interactivo
   (botones `h-11`, filas de tabla clicables, ítems de tab bar `h-16`, avatar
-  `size-9` con área de toque ampliada por padding del botón contenedor).
+  `size-9` con área de toque ampliada por padding del botón contenedor). Todo
+  botón icon-only usa por defecto `size-11` (44px) con icono `size-5` (20px,
+  §3.1); la única excepción es la variante compacta (`size-8`/icono `size-4`)
+  de las acciones de fila en tablas de escritorio, documentada explícitamente
+  como tal en §3.1 y §3.4.
+- **Conmutador de tema accesible**: `ThemeToggle` (§3.10) es un control
+  estándar con `aria-label` dinámico, foco visible y el tamaño icon-only por
+  defecto (44px/20px); el estado inicial respeta `prefers-color-scheme` y no
+  hay parpadeo de tema incorrecto en la carga (§1.2); el cambio nunca depende
+  solo del color: el icono (sol/luna) y el texto o `aria-label` cambian junto
+  con el tema.
 - **El color nunca es el único indicador**: estado de navegación activo
   (color + peso de fuente + `aria-current`), badges de categoría (color +
   nombre siempre visible), toasts (color + icono distinto por tipo + texto),

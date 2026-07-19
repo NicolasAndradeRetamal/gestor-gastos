@@ -51,6 +51,7 @@
       >
         Cerrar sesión
       </BaseButton>
+      <ThemeToggle />
     </div>
   </aside>
 </template>
@@ -61,6 +62,7 @@ import { useRouter } from 'vue-router'
 
 import AppIcon from '@/components/base/AppIcon.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import ThemeToggle from '@/components/base/ThemeToggle.vue'
 import { NAV_ITEMS } from '@/components/layout/navItems'
 import { getInitials } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
