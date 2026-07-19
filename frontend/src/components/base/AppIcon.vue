@@ -10,7 +10,7 @@
     aria-hidden="true"
   >
     <path v-for="(d, index) in paths" :key="index" :d="d" />
-    <circle v-if="name === 'alert-circle' || name === 'info-circle' || name === 'check-circle'" cx="12" cy="12" r="9" />
+    <circle v-if="circleRadius" cx="12" cy="12" :r="circleRadius" />
   </svg>
 </template>
 
@@ -34,6 +34,8 @@ export type IconName =
   | 'plus'
   | 'search-off'
   | 'check'
+  | 'sun'
+  | 'moon'
 
 const props = defineProps<{
   name: IconName
@@ -72,7 +74,26 @@ const PATHS: Record<IconName, string[]> = {
   plus: ['M12 5v14', 'M5 12h14'],
   'search-off': ['M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z', 'm21 21-5.2-5.2'],
   check: ['m5 12 5 5 9-9'],
+  sun: [
+    'M12 1v2',
+    'M12 21v2',
+    'M4.22 4.22l1.42 1.42',
+    'M18.36 18.36l1.42 1.42',
+    'M1 12h2',
+    'M21 12h2',
+    'M4.22 19.78l1.42-1.42',
+    'M18.36 5.64l1.42-1.42',
+  ],
+  moon: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z'],
+}
+
+const CIRCLE_RADIUS: Partial<Record<IconName, number>> = {
+  'alert-circle': 9,
+  'info-circle': 9,
+  'check-circle': 9,
+  sun: 5,
 }
 
 const paths = computed(() => PATHS[props.name])
+const circleRadius = computed(() => CIRCLE_RADIUS[props.name])
 </script>

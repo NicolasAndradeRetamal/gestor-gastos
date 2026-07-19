@@ -64,6 +64,16 @@
   color-scheme: light dark;
 }
 
+/* Manual theme override set by ThemeToggle via data-theme on <html>. Without
+   the attribute, color-scheme above keeps following prefers-color-scheme. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 body {
   @apply bg-surface text-ink antialiased;
   font-feature-settings: 'tnum' 1;

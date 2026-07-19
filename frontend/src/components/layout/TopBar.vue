@@ -27,6 +27,9 @@
           <AppIcon name="logout" class="size-5" />
           Cerrar sesión
         </button>
+        <div @click="menuOpen = false">
+          <ThemeToggle variant="menu-item" />
+        </div>
       </div>
     </div>
   </header>
@@ -37,6 +40,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppIcon from '@/components/base/AppIcon.vue'
+import ThemeToggle from '@/components/base/ThemeToggle.vue'
 import { getInitials } from '@/composables/useInitials'
 import { useClickOutside } from '@/composables/useClickOutside'
 import { useAuthStore } from '@/stores/auth'
