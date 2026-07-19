@@ -28,7 +28,7 @@ services:
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://gestor-gastos-api.onrender.com/api/*
+        destination: https://gestor-gastos-api-jksn.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html

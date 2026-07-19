@@ -7,9 +7,11 @@ PostgreSQL y cliente SPA en Vue 3, todo orquestado con Docker Compose.
 
 ## Demo
 
-<!-- TODO: reemplazar con la URL real tras aplicar el Blueprint en Render -->
-Próximamente en línea (Render + Neon). Mientras tanto, la app completa levanta
-en local con un comando (ver [Puesta en marcha](#puesta-en-marcha-con-docker)).
+**https://gestor-gastos-web.onrender.com**
+
+API desplegada en Render y base de datos PostgreSQL en Neon; también puedes
+explorar la API en su
+[Swagger](https://gestor-gastos-api-jksn.onrender.com/swagger).
 
 > La instancia gratuita de la API se apaga tras 15 minutos sin tráfico: la
 > primera petición después de un rato de inactividad puede tardar ~1 minuto.
