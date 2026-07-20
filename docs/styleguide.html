@@ -275,10 +275,16 @@
   table.expenses tbody tr:hover { background: var(--color-surface-sunken); }
   table.expenses .amount { text-align: right; font-weight: 600; }
   table.expenses .muted { color: var(--color-ink-muted); }
+  /* Compact icon-only (32px area / 16px glyph): exception limited to table row actions, DESIGN.md §3.1. */
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: var(--radius-md); border: none; background: transparent; color: var(--color-ink-muted); cursor: pointer; }
   .icon-btn:hover { background: var(--color-surface-sunken); }
   .icon-btn.danger:hover { background: var(--color-danger-soft); color: var(--color-danger); }
   .icon-btn svg { width: 1rem; height: 1rem; }
+
+  /* Default icon-only (44px area / 24px glyph): modal close, toast close, any standalone icon action, DESIGN.md §3.1. */
+  .icon-btn-lg { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md); border: none; background: transparent; color: var(--color-ink-muted); cursor: pointer; }
+  .icon-btn-lg:hover { background: var(--color-surface-sunken); }
+  .icon-btn-lg svg { width: 1.5rem; height: 1.5rem; }
 
   /* mobile expense row */
   .expense-row-mobile {
@@ -308,8 +314,20 @@
   }
   .sidebar-demo .sb-link.active { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 700; }
   .sidebar-demo .sb-link.active::before { content: ""; position: absolute; left: -0.6rem; top: .3rem; bottom: .3rem; width: 3px; background: var(--color-primary); border-radius: 999px; }
-  .sidebar-demo .sb-foot { border-top: 1px solid var(--color-line); padding: .7rem; display: flex; align-items: center; gap: .6rem; }
-  .sidebar-demo .avatar-init { width: 2rem; height: 2rem; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary); font-weight: 700; font-size: .75rem; display: flex; align-items: center; justify-content: center; }
+  .sidebar-demo .sb-foot { border-top: 1px solid var(--color-line); padding: .7rem; display: flex; align-items: center; gap: .6rem; width: 100%; cursor: pointer; background: none; border-left: none; border-right: none; border-bottom: none; text-align: left; }
+  .sidebar-demo .sb-foot:hover { background: var(--color-surface-sunken); }
+  .sidebar-demo .sb-foot .chev { margin-left: auto; width: 1.1rem; height: 1.1rem; color: var(--color-ink-muted); flex-shrink: 0; }
+  .sidebar-demo .avatar-init { width: 2rem; height: 2rem; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary); font-weight: 700; font-size: .75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* User menu popover (avatar trigger, shared by sidebar footer and mobile topbar), DESIGN.md §3.7 */
+  .user-menu-demo { width: 14rem; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-surface-raised); box-shadow: var(--shadow-raised); padding: .25rem; }
+  .user-menu-demo .um-head { padding: .5rem .75rem; }
+  .user-menu-demo .um-head .name { font-size: .8rem; font-weight: 500; }
+  .user-menu-demo .um-head .email { font-size: .7rem; color: var(--color-ink-muted); }
+  .user-menu-demo .um-row { display: flex; align-items: center; gap: .5rem; height: 2.75rem; padding: 0 .75rem; border-radius: var(--radius-md); font-size: .8rem; font-weight: 500; color: var(--color-ink-muted); cursor: pointer; }
+  .user-menu-demo .um-row:hover { background: var(--color-surface-sunken); }
+  .user-menu-demo .um-row svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+  .user-menu-demo .um-divider { margin: .25rem 0; border-top: 1px solid var(--color-line); }
 
   .tabbar-demo {
     display: flex; border: 1px solid var(--color-line); border-top: 2px solid var(--color-line);
@@ -442,7 +460,7 @@
     </div>
     <div class="type-row">
       <div class="type-meta">Body<br>text-base · 400</div>
-      <div class="type-body">Registrá tus gastos diarios y mirá en qué se te va la plata cada mes.</div>
+      <div class="type-body">Registra tus gastos diarios y descubre en qué se va tu dinero cada mes.</div>
     </div>
     <div class="type-row">
       <div class="type-meta">Body en formulario<br>text-sm · 400</div>
@@ -490,7 +508,7 @@
        ============================================================ -->
   <section class="guide-section" id="buttons">
     <h2>Botones</h2>
-    <p class="lead">Reposo, hover real (pasá el mouse), focus, activo/presionado, deshabilitado y carga. Ver DESIGN.md §3.1.</p>
+    <p class="lead">Reposo, hover real (pasa el mouse), focus, activo/presionado, deshabilitado y carga. Ver DESIGN.md §3.1.</p>
 
     <h3 class="sub">Primario</h3>
     <div class="state-row">
@@ -525,6 +543,18 @@
       <div class="state-item"><button class="btn btn-ghost">Editar</button><span class="state-label">Reposo / hover real</span></div>
       <div class="state-item"><button class="btn btn-ghost is-focus">Editar</button><span class="state-label">Focus</span></div>
       <div class="state-item"><button class="btn btn-ghost" disabled>Editar</button><span class="state-label">Deshabilitado</span></div>
+    </div>
+
+    <h3 class="sub">Icon-only</h3>
+    <div class="state-row">
+      <div class="state-item">
+        <button class="icon-btn-lg" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></button>
+        <span class="state-label">Por defecto: 44px área / 24px icono</span>
+      </div>
+      <div class="state-item">
+        <button class="icon-btn" aria-label="Editar"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span class="state-label">Compacto (filas de tabla): 32px área / 16px icono</span>
+      </div>
     </div>
   </section>
 
@@ -709,12 +739,32 @@
             <span class="sb-link">Gastos</span>
             <span class="sb-link">Categorías</span>
           </nav>
-          <div class="sb-foot">
+          <button type="button" class="sb-foot" aria-haspopup="menu" aria-expanded="false">
             <span class="avatar-init">AN</span>
-            <span style="font-size:.8rem;font-weight:500;">Ana</span>
+            <span style="font-size:.8rem;font-weight:500;">Ana Núñez</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <span class="state-label">Sidebar (md+) — el pie abre el menú de usuario</span>
+      </div>
+
+      <div class="state-item">
+        <div class="user-menu-demo" role="menu" aria-label="Menú de Ana Núñez">
+          <div class="um-head" role="presentation">
+            <div class="name">Ana Núñez</div>
+            <div class="email">ana@correo.com</div>
+          </div>
+          <div class="um-row" role="menuitem">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.75"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+            Modo oscuro
+          </div>
+          <div class="um-divider"></div>
+          <div class="um-row" role="menuitem">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9M10 12h11M17 8l4 4-4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Cerrar sesión
           </div>
         </div>
-        <span class="state-label">Sidebar (md+)</span>
+        <span class="state-label">Menú de usuario abierto (mismo en escritorio y móvil, ver DESIGN.md §3.7 y §3.10)</span>
       </div>
 
       <div class="state-item">
@@ -750,7 +800,7 @@
       </div>
       <div class="toast toast-danger" role="alert">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
-        No se pudo guardar el gasto. Intentá de nuevo.
+        No se pudo guardar el gasto. Inténtalo de nuevo.
       </div>
       <div class="toast toast-warning" role="alert">
         <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 20h20L12 3Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
@@ -774,7 +824,7 @@
         <div class="modal-panel" role="dialog" aria-modal="true">
           <div class="modal-head">
             <h4>Añadir gasto</h4>
-            <button class="icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></button>
+            <button class="icon-btn-lg" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></button>
           </div>
           <div style="display:flex; flex-direction:column; gap:1rem;">
             <div class="field" style="max-width:none;">
@@ -810,14 +860,14 @@
       <div class="empty-state">
         <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.5"/></svg>
         <div class="title">Sin gastos en este periodo</div>
-        <div class="desc">Ajustá el rango de fechas o el filtro de categoría, o añadí un gasto nuevo.</div>
+        <div class="desc">Ajusta el rango de fechas o el filtro de categoría, o añade un gasto nuevo.</div>
         <button class="btn btn-primary" style="margin-top:.4rem;">+ Añadir gasto</button>
       </div>
 
       <div class="error-state" role="alert">
         <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 20h20L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         <div class="title">No se pudo cargar la información.</div>
-        <div class="desc">Comprobá tu conexión e intentalo de nuevo.</div>
+        <div class="desc">Comprueba tu conexión e inténtalo de nuevo.</div>
         <button class="btn btn-secondary" style="margin-top:.4rem;">Reintentar</button>
       </div>
 

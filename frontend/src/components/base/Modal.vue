@@ -32,7 +32,7 @@
 import { nextTick, ref, useId, watch } from 'vue'
 
 import BaseButton from '@/components/base/BaseButton.vue'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { trapTabKey, useFocusTrap } from '@/composables/useFocusTrap'
 
 const props = defineProps<{
   open: boolean
@@ -64,26 +64,7 @@ function onEscape(): void {
 }
 
 function onTab(event: KeyboardEvent): void {
-  useFocusTrapTabHandler(event, panelRef.value)
-}
-
-// Keeps Tab/Shift+Tab cycling within the modal panel.
-function useFocusTrapTabHandler(event: KeyboardEvent, panel: HTMLElement | null): void {
-  if (!panel) return
-  const focusable = panel.querySelectorAll<HTMLElement>(
-    'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-  )
-  if (focusable.length === 0) return
-  const first = focusable[0]
-  const last = focusable[focusable.length - 1]
-  if (!first || !last) return
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
+  trapTabKey(event, panelRef.value)
 }
 
 watch(

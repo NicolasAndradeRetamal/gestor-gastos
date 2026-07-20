@@ -47,8 +47,8 @@ Principios de diseño:
 **Modo claro y modo oscuro, ambos soportados desde el inicio, con
 conmutador manual explícito.** El estado inicial respeta la preferencia del
 sistema (`prefers-color-scheme`); a partir de ahí, el usuario puede alternar
-el tema con un control siempre visible (`ThemeToggle`, §3.10) y su elección
-se recuerda entre sesiones.
+el tema con un control siempre accesible desde el menú de usuario
+(`ThemeToggle`, §3.10) y su elección se recuerda entre sesiones.
 
 Justificación de fondo: la app se usa a cualquier hora del día para un gasto
 puntual, y el modo oscuro es una expectativa estándar en herramientas
@@ -109,9 +109,11 @@ cambios posteriores del sistema en vivo hasta que vuelva a tocar el control
   `matchMedia('(prefers-color-scheme: dark)').matches` — aplica el opuesto
   fijando `data-theme` en `<html>` y lo persiste en `localStorage`. Desde ese
   momento el tema queda fijo en la elección explícita del usuario.
-- El control es parte del layout persistente (pie del sidebar en escritorio,
-  menú de usuario en móvil, §3.7) — no vive dentro de una vista de
-  "Configuración", que no existe en el alcance actual (§4.6).
+- El control vive dentro del **menú de usuario** que se abre desde el avatar,
+  con el mismo patrón en escritorio y en móvil (§3.7, §3.10): agrupado con las
+  acciones de cuenta, nunca suelto en el layout ni junto al botón de cerrar
+  sesión, y tampoco dentro de una vista de "Configuración", que no existe en
+  el alcance actual (§4.6).
 
 ### 1.3 Paleta de colores
 
@@ -374,16 +376,24 @@ es limitado, nunca como único control de una acción destructiva importante.
 
 Icono opcional a la izquierda del texto, `size-4` (16px, `aria-hidden="true"`),
 el texto siempre visible salvo en botones **icon-only** (p. ej. cerrar modal,
-acciones de tabla, `ThemeToggle`), que llevan `aria-label` explícito en vez de
-texto visible.
+acciones de tabla), que llevan `aria-label` explícito en vez de texto visible.
 
 **Botón icon-only — tamaño por defecto.** Área táctil `size-11` (44×44px,
-`px-0 shrink-0`) con icono `size-5` (20px) centrado. Es el tamaño por defecto
-de todo botón de solo icono de la app: cerrar modal (§3.6), cerrar sesión y
-`ThemeToggle` en la navegación (§3.7), cerrar toast (§3.8). Un icono más
+`px-0 shrink-0`) con icono **`size-6` (24px)** centrado. Es el tamaño por
+defecto de todo botón de solo icono de la app: cerrar modal (§3.6), cerrar
+toast (§3.8) y cualquier acción de icono aislada del layout o la navegación.
+
+Decisión de tamaño (número verificable): el glifo por defecto de un icon-only
+es **24px (`size-6`)** dentro del área de **44px (`size-11`)**, dejando ~10px
+de aire por lado. Una versión previa usaba 20px (`size-5`), que dentro de los
+mismos 44px dejaba ~12px por lado y se percibía pequeño para acciones
+importantes; por eso el mínimo por defecto se sube a 24px. Un icono más
 pequeño dentro de esa misma área de 44px es un defecto de diseño, no un
-detalle — el objetivo no es solo el área de toque sino que el icono se
-perciba con claridad a esa distancia de lectura.
+detalle — el objetivo no es solo el área de toque sino que el icono se perciba
+con claridad a distancia de lectura. Nota: la acción **cerrar sesión** ya no
+es un botón icon-only en ninguna parte de la app; vive como fila con etiqueta
+dentro del menú de usuario (§3.7), donde su icono es `size-5` (20px) y va
+siempre acompañado del texto `Cerrar sesión`.
 
 **Botón icon-only — variante compacta (excepción documentada).** Área `size-8`
 (32px) con icono `size-4` (16px), **únicamente** para acciones repetidas por
@@ -525,7 +535,7 @@ borrado. Un solo modal a la vez.
   diálogo).
 - **Cabecera**: `flex items-center justify-between mb-4` — título `H2` +
   botón cerrar icon-only (`×`, tamaño por defecto de §3.1 — `size-11`,
-  icono `size-5`, `aria-label="Cerrar"`).
+  icono `size-6`, `aria-label="Cerrar"`).
 - **Cuerpo**: formulario en `space-y-4` (alta/edición) o texto de
   confirmación `text-sm text-ink-muted` (borrado).
 - **Pie**: `flex items-center justify-end gap-3 mt-6` — botón secundario
@@ -557,21 +567,54 @@ borrado. Un solo modal a la vez.
   `bg-primary-soft text-primary font-semibold` + una barra izquierda de 3px
   `bg-primary` (el color nunca es el único indicador: el `aria-current="page"`
   y el peso de fuente también cambian).
-- Pie del sidebar: tarjeta de usuario — avatar circular con iniciales
-  (`size-9 rounded-full bg-primary-soft text-primary font-semibold flex items-center justify-center text-sm`)
-  + `displayName` (`text-sm font-medium truncate`) + botón `Cerrar sesión`
-  (fantasma icon-only, tamaño por defecto de §3.1 — `size-11`, icono `size-5`,
-  `aria-label="Cerrar sesión"`) + `ThemeToggle` (§3.10, mismo tamaño), en ese
-  orden de izquierda a derecha tras el nombre; todo dentro de
-  `mt-auto border-t border-line p-3 flex items-center gap-3`.
+- Pie del sidebar: **botón que abre el menú de usuario** (mismo componente
+  que en móvil, ver "Menú de usuario" abajo). El disparador ocupa el ancho del
+  pie —
+  `mt-auto border-t border-line p-3 flex w-full items-center gap-3 rounded-none hover:bg-surface-sunken transition-colors`—
+  y contiene: avatar circular con iniciales
+  (`size-9 rounded-full bg-primary-soft text-primary font-semibold flex items-center justify-center text-sm shrink-0`),
+  `displayName` (`text-sm font-medium truncate text-left flex-1`) e icono
+  `chevron` (`size-5 text-ink-muted shrink-0`, `aria-hidden`) que indica que
+  despliega un menú. `aria-haspopup="menu"` + `aria-expanded`. El menú aparece
+  **hacia arriba** (anclado al pie del sidebar) porque el disparador está en el
+  borde inferior. Ni `Cerrar sesión` ni `ThemeToggle` viven ya sueltos en el
+  pie: ambos son filas dentro de este menú.
+
+**Menú de usuario (`UserMenu`) — contenedor de acciones de cuenta.** Patrón
+unificado en escritorio y móvil; es el estándar de la industria (Gmail,
+GitHub, Linear, Notion agrupan perfil, ajustes, tema y salir bajo el avatar).
+Se elige frente a una topbar de escritorio dedicada porque en `md:` la app no
+tiene topbar —solo sidebar—, e introducir una barra superior solo para alojar
+el conmutador añadiría cromo sin contenido; el avatar del pie del sidebar ya es
+el lugar convencional de las acciones de cuenta. Popover
+`w-56 rounded-md border border-line bg-surface-raised p-1 shadow-raised`,
+`role="menu"`, con trampa/retorno de foco y cierre por `Escape` o click fuera:
+
+1. **Encabezado no interactivo**: `displayName` (`px-3 py-2 text-sm font-medium
+   text-ink truncate`) y, si existe, el correo debajo (`text-xs text-ink-muted
+   truncate`). `role="presentation"`.
+2. **Fila `ThemeToggle`** (§3.10, variante `menu-item`): icono sol/luna
+   `size-5` a la izquierda + texto `Modo claro` / `Modo oscuro`.
+3. **Divisor** `my-1 border-t border-line` — separa el ajuste de apariencia de
+   la acción destructiva, para que `Cerrar sesión` no quede pegado a un control
+   que se pulsa a menudo.
+4. **Fila `Cerrar sesión`**: `role="menuitem"`,
+   `flex h-11 w-full items-center gap-2 rounded-md px-3 text-sm font-medium
+   text-ink-muted hover:bg-surface-sunken`, icono `logout` `size-5` a la
+   izquierda + texto. Es la última fila y la única destructiva.
+
+Cada fila del menú mide `h-11` (44px) como objetivo táctil; los iconos de fila
+son `size-5` (20px) **con** texto visible, no icon-only.
 
 **Móvil (`< md`)** — barra inferior fija de navegación (los tres destinos
 principales) + topbar simple:
 
 - Topbar: `h-14 flex items-center justify-between px-4 border-b border-line bg-surface-raised sticky top-0 z-10` —
   nombre de la vista actual (`H1` reducido a `text-lg font-bold`) a la
-  izquierda, avatar del usuario (botón, abre menú con `Cerrar sesión` y
-  `ThemeToggle`, §3.10) a la derecha, `size-9`.
+  izquierda, y a la derecha el avatar del usuario (`size-9`, botón con
+  `aria-haspopup="menu"`) que abre el **mismo `UserMenu`** descrito arriba
+  (encabezado + `ThemeToggle` + divisor + `Cerrar sesión`), anclado hacia
+  abajo desde el avatar.
 - Tab bar inferior: `fixed inset-x-0 bottom-0 z-10 flex border-t border-line bg-surface-raised pb-[env(safe-area-inset-bottom)]`,
   tres botones iguales (`Dashboard`, `Gastos`, `Categorías`)
   `flex-1 flex flex-col items-center justify-center gap-0.5 h-16 text-xs font-medium text-ink-muted`
@@ -592,7 +635,7 @@ máximo 3 visibles). Cada toast:
 `flex items-start gap-3 w-full sm:w-96 rounded-lg border p-4 shadow-raised`,
 con icono `size-5 shrink-0` (`aria-hidden`) + texto `text-sm text-ink flex-1` +
 botón cerrar icon-only opcional, tamaño por defecto de §3.1 (`size-11`, icono
-`size-5`; al ser una acción independiente y no una fila de tabla, no aplica
+`size-6`; al ser una acción independiente y no una fila de tabla, no aplica
 la variante compacta). `role="status"` (éxito/info) o
 `role="alert"` (error/warning) para que el lector de pantalla lo anuncie sin
 esperar foco. Auto-descarta a los 5s (éxito/info) o permanece hasta que el
@@ -646,11 +689,14 @@ e inténtalo de nuevo.`, botón secundario `Reintentar`. `role="alert"`.
 
 ### 3.10 Conmutador de tema (`ThemeToggle`)
 
-Botón icon-only que alterna entre modo claro y modo oscuro (mecanismo
-completo en §1.2). Usa el tamaño **por defecto** de icon-only de §3.1: área
-táctil `size-11` (44×44px), icono `size-5` (20px) — nunca la variante
-compacta, por ser un control de navegación persistente, no una acción de
-fila de tabla.
+Control que alterna entre modo claro y modo oscuro (mecanismo completo en
+§1.2). Se renderiza como **fila con etiqueta dentro del menú de usuario**
+(`UserMenu`, §3.7), con el mismo patrón visual que la fila `Cerrar sesión`:
+`role="menuitem"`, `flex h-11 w-full items-center gap-2 rounded-md px-3
+text-sm font-medium`, icono sol/luna `size-5` (20px) a la izquierda + texto.
+Esta es su única ubicación, idéntica en escritorio y en móvil. No es un botón
+icon-only suelto en el layout: el texto de la fila comunica la acción sin
+depender solo del icono.
 
 - **Icono**: sol / luna — dos íconos nuevos a sumar al set de `AppIcon`
   (`sun`, `moon`). El icono mostrado representa el modo **activo** (sol si el
@@ -661,27 +707,27 @@ fila de tabla.
   cuando el tema activo es claro, `Cambiar a modo claro` cuando el tema
   activo es oscuro (nunca un texto estático como "Cambiar tema", que no
   informa el resultado de la acción).
-- **Estados** (mismo patrón fantasma que §3.1):
+- **Estados** (los de una fila de menú):
 
 | Estado | Especificación |
 |---|---|
-| Reposo | `text-ink-muted`, sin fondo |
-| Hover | `hover:bg-surface-sunken` |
-| Focus | anillo global (§2) |
-| Activo/presionado | `active:scale-[0.98]` |
+| Reposo | `text-ink-muted`, sin fondo (fila del menú) |
+| Hover | `hover:bg-surface-sunken` en toda la fila |
+| Focus | anillo global (§2) al recorrer el menú con teclado |
+| Activo/presionado | `active:scale-[0.99]` |
 | Deshabilitado | no aplica — el control está siempre disponible |
 | Carga | no aplica — el cambio de tema es síncrono, sin espera de red |
 
-- **Ubicación**:
-  - **Escritorio** (`md:` y superior): pie del sidebar (§3.7), en el mismo
-    contenedor que la tarjeta de usuario y el botón `Cerrar sesión`
-    (`mt-auto border-t border-line p-3 flex items-center gap-3`), a la
-    derecha del todo, después del botón `Cerrar sesión`.
-  - **Móvil** (`< md`): dentro del menú de usuario que abre el avatar de la
-    topbar (§3.7), como una fila más del menú (`role="menuitem"`, mismo
-    patrón visual que la fila `Cerrar sesión`), con el icono sol/luna a la
-    izquierda y el texto `Modo claro` / `Modo oscuro` (el modo al que cambia
-    al tocar, coherente con el texto de acción del resto del menú).
+- **Ubicación** (unificada, un solo patrón): fila dentro del menú de usuario
+  (`UserMenu`, §3.7) que se abre desde el avatar. Es idéntica en ambos tamaños:
+  - **Escritorio** (`md:` y superior): el avatar del pie del sidebar abre el
+    menú hacia arriba; `ThemeToggle` es la primera fila del menú, encima del
+    divisor y de `Cerrar sesión`.
+  - **Móvil** (`< md`): el avatar de la topbar abre el mismo menú hacia abajo;
+    `ThemeToggle` ocupa la misma posición.
+  - En ambos casos la fila muestra el icono sol/luna a la izquierda y el texto
+    `Modo claro` / `Modo oscuro` (el modo al que cambia al pulsar, coherente
+    con el texto de acción del resto del menú).
 - El estado nunca depende únicamente del color: el icono cambia de forma
   (sol ↔ luna) y el `aria-label`/texto visible cambian junto con él.
 
@@ -892,16 +938,17 @@ rutas/vistas si se prefiere otro enfoque (p. ej. un panel dentro de
 - **Objetivos táctiles**: mínimo 44×44px en todo elemento interactivo
   (botones `h-11`, filas de tabla clicables, ítems de tab bar `h-16`, avatar
   `size-9` con área de toque ampliada por padding del botón contenedor). Todo
-  botón icon-only usa por defecto `size-11` (44px) con icono `size-5` (20px,
+  botón icon-only usa por defecto `size-11` (44px) con icono `size-6` (24px,
   §3.1); la única excepción es la variante compacta (`size-8`/icono `size-4`)
   de las acciones de fila en tablas de escritorio, documentada explícitamente
-  como tal en §3.1 y §3.4.
-- **Conmutador de tema accesible**: `ThemeToggle` (§3.10) es un control
-  estándar con `aria-label` dinámico, foco visible y el tamaño icon-only por
-  defecto (44px/20px); el estado inicial respeta `prefers-color-scheme` y no
-  hay parpadeo de tema incorrecto en la carga (§1.2); el cambio nunca depende
-  solo del color: el icono (sol/luna) y el texto o `aria-label` cambian junto
-  con el tema.
+  como tal en §3.1 y §3.4. Los iconos que acompañan a un texto (filas del menú
+  de usuario, enlaces de nav, tab bar) son `size-5` (20px), no icon-only.
+- **Conmutador de tema accesible**: `ThemeToggle` (§3.10) es una fila del menú
+  de usuario (§3.7) con texto visible (`Modo claro`/`Modo oscuro`), foco
+  visible y objetivo táctil `h-11` (44px); el estado inicial respeta
+  `prefers-color-scheme` y no hay parpadeo de tema incorrecto en la carga
+  (§1.2); el cambio nunca depende solo del color: el icono (sol/luna) y el
+  texto cambian junto con el tema.
 - **El color nunca es el único indicador**: estado de navegación activo
   (color + peso de fuente + `aria-current`), badges de categoría (color +
   nombre siempre visible), toasts (color + icono distinto por tipo + texto),
