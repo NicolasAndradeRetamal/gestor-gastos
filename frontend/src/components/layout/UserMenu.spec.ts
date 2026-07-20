@@ -12,6 +12,7 @@ function setup(props: Record<string, unknown> = {}) {
     routes: [
       { path: '/', name: 'dashboard', component: { template: '<div />' } },
       { path: '/login', name: 'login', component: { template: '<div />' } },
+      { path: '/security', name: 'security', component: { template: '<div />' } },
     ],
   })
   return render(UserMenu, {
@@ -40,6 +41,7 @@ describe('UserMenu', () => {
 
     expect(screen.getByRole('menu')).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Modo oscuro' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Seguridad' })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Cerrar sesión' })).toBeInTheDocument()
   })
 

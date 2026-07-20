@@ -9,7 +9,7 @@ import { authService } from '@/services/auth.service'
 import LoginView from '@/views/LoginView.vue'
 
 vi.mock('@/services/auth.service', () => ({
-  authService: { login: vi.fn(), register: vi.fn(), me: vi.fn() },
+  authService: { login: vi.fn(), register: vi.fn(), me: vi.fn(), logout: vi.fn() },
 }))
 
 const mockedAuthService = vi.mocked(authService)
@@ -62,7 +62,9 @@ describe('LoginView', () => {
     mockedAuthService.login.mockResolvedValue({
       token: 'tok',
       expiresAt: '2026-07-17T13:00:00Z',
-      user: { id: 'u1', email: 'ana@mail.com', displayName: 'Ana' },
+      refreshToken: 'ref',
+      refreshTokenExpiresAt: '2026-07-31T13:00:00Z',
+      user: { id: 'u1', email: 'ana@mail.com', displayName: 'Ana', twoFactorEnabled: false, twoFactorEnabledAt: null },
     })
     const { router } = setup()
 
