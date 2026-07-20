@@ -61,6 +61,9 @@ public abstract class IntegrationTestBase(PostgresContainerFixture postgres) : I
         return (authedClient, auth.User);
     }
 
+    /// <summary>Creates an unauthenticated client against the same host (for adding a bearer token by hand).</summary>
+    protected HttpClient CreateClient() => _factory.CreateClient();
+
     /// <summary>Direct DbContext access for arranging data the public API cannot create (e.g. cross-user fixtures).</summary>
     protected AppDbContext CreateDbContext()
     {

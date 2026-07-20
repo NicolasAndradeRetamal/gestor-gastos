@@ -18,9 +18,14 @@ public static class DependencyInjection
                 .UseSnakeCaseNamingConvention());
 
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<TotpOptions>(configuration.GetSection(TotpOptions.SectionName));
 
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddSingleton<ITotpService, TotpService>();
+        services.AddSingleton<ITotpSecretProtector, AesGcmTotpSecretProtector>();
+        services.AddSingleton<IRecoveryCodeService, RecoveryCodeService>();
 
         return services;
     }
