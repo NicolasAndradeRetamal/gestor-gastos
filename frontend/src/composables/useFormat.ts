@@ -26,8 +26,10 @@ export function formatFullDate(isoDate: string): string {
   )
 }
 
+// Includes the year so bars for the same month of different years (e.g. jul 25
+// vs jul 26) stay distinguishable.
 export function formatMonthLabel(yearMonth: string): string {
   const [year, month] = yearMonth.split('-').map(Number)
   const date = new Date(year ?? 1970, (month ?? 1) - 1, 1)
-  return new Intl.DateTimeFormat(LOCALE, { month: 'short' }).format(date)
+  return new Intl.DateTimeFormat(LOCALE, { month: 'short', year: '2-digit' }).format(date)
 }

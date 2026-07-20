@@ -28,8 +28,17 @@ describe('formatFullDate', () => {
 })
 
 describe('formatMonthLabel', () => {
-  it('formats a YYYY-MM value as an abbreviated month', () => {
+  it('formats a YYYY-MM value as an abbreviated month with a 2-digit year', () => {
     expect(formatMonthLabel('2026-01')).toMatch(/ene/i)
     expect(formatMonthLabel('2026-12')).toMatch(/dic/i)
+    expect(formatMonthLabel('2026-07')).toMatch(/26/)
+  })
+
+  it('keeps the same month of different years distinguishable', () => {
+    const y2025 = formatMonthLabel('2025-07')
+    const y2026 = formatMonthLabel('2026-07')
+    expect(y2025).toMatch(/25/)
+    expect(y2026).toMatch(/26/)
+    expect(y2025).not.toBe(y2026)
   })
 })
