@@ -20,6 +20,12 @@ const router = createRouter({
       meta: { requiresAuth: false, guestOnly: true },
     },
     {
+      path: '/login/2fa',
+      name: 'login-2fa',
+      component: () => import('@/views/TwoFactorChallengeView.vue'),
+      meta: { requiresAuth: false, guestOnly: true },
+    },
+    {
       path: '/',
       name: 'dashboard',
       component: () => import('@/views/DashboardView.vue'),
@@ -36,6 +42,12 @@ const router = createRouter({
       name: 'categories',
       component: () => import('@/views/CategoriesView.vue'),
       meta: { requiresAuth: true, title: 'Categorías' },
+    },
+    {
+      path: '/security',
+      name: 'security',
+      component: () => import('@/views/SecurityView.vue'),
+      meta: { requiresAuth: true, title: 'Seguridad' },
     },
     {
       path: '/:pathMatch(.*)*',

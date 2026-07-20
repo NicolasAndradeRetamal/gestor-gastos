@@ -1,11 +1,15 @@
+using System.Globalization;
 using System.Text;
+using System.Threading.RateLimiting;
 using FluentValidation;
+using GestorGastos.Api.Auth;
 using GestorGastos.Api.Middleware;
 using GestorGastos.Api.Validators;
 using GestorGastos.Infrastructure;
 using GestorGastos.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -18,6 +22,46 @@ builder.Services.AddControllers();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+builder.Services.AddScoped<SessionIssuer>();
+
+// The platform (Render) terminates TLS and forwards the real client IP in
+// X-Forwarded-For; trust it so rate limiting partitions by the actual client.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
+
+        await ProblemDetailsWriter.WriteAsync(
+            context.HttpContext,
+            StatusCodes.Status429TooManyRequests,
+            "Demasiadas solicitudes",
+            "Has realizado demasiados intentos. Inténtalo de nuevo más tarde.",
+            cancellationToken: token);
+    };
+
+    AddFixedWindowPolicy(options, RateLimitPolicies.Register, permitLimit: 5, TimeSpan.FromHours(1));
+    AddFixedWindowPolicy(options, RateLimitPolicies.Login, permitLimit: 10, TimeSpan.FromMinutes(5));
+    AddFixedWindowPolicy(options, RateLimitPolicies.Refresh, permitLimit: 30, TimeSpan.FromMinutes(5));
+    AddFixedWindowPolicy(options, RateLimitPolicies.TwoFactor, permitLimit: 10, TimeSpan.FromMinutes(5));
+});
+
+static void AddFixedWindowPolicy(
+    Microsoft.AspNetCore.RateLimiting.RateLimiterOptions options, string name, int permitLimit, TimeSpan window) =>
+    options.AddPolicy(name, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = permitLimit, Window = window }));
 
 var jwtSecret = builder.Configuration["Jwt:Secret"];
 if (string.IsNullOrWhiteSpace(jwtSecret))
@@ -89,6 +133,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 app.UseExceptionHandler();
 
 app.UseSwagger();
@@ -103,6 +149,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();

@@ -36,6 +36,9 @@ export type IconName =
   | 'check'
   | 'sun'
   | 'moon'
+  | 'shield'
+  | 'copy'
+  | 'download'
 
 const props = defineProps<{
   name: IconName
@@ -85,6 +88,12 @@ const PATHS: Record<IconName, string[]> = {
     'M18.36 5.64l1.42-1.42',
   ],
   moon: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z'],
+  shield: ['M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z'],
+  copy: [
+    'M9 9h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z',
+    'M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
+  ],
+  download: ['M12 3v12', 'm7 12 5 5 5-5', 'M5 21h14'],
 }
 
 const CIRCLE_RADIUS: Partial<Record<IconName, number>> = {

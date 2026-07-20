@@ -3,7 +3,7 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { authService } from '@/services/auth.service'
-import { AUTH_TOKEN_KEY } from '@/services/http'
+import { AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 import type { AuthResponse } from '@/types'
 
@@ -12,6 +12,8 @@ vi.mock('@/services/auth.service', () => ({
     login: vi.fn(),
     register: vi.fn(),
     me: vi.fn(),
+    logout: vi.fn(),
+    verifyTwoFactor: vi.fn(),
   },
 }))
 
@@ -20,7 +22,9 @@ const mockedAuthService = vi.mocked(authService)
 const authResponse: AuthResponse = {
   token: 'token-123',
   expiresAt: '2026-07-17T13:00:00Z',
-  user: { id: 'u1', email: 'ana@mail.com', displayName: 'Ana' },
+  refreshToken: 'refresh-123',
+  refreshTokenExpiresAt: '2026-07-31T13:00:00Z',
+  user: { id: 'u1', email: 'ana@mail.com', displayName: 'Ana', twoFactorEnabled: false, twoFactorEnabledAt: null },
 }
 
 describe('auth store', () => {
@@ -35,16 +39,46 @@ describe('auth store', () => {
     expect(store.isAuthenticated).toBe(false)
   })
 
-  it('persists the token and user on successful login', async () => {
+  it('persists both tokens and the user on successful login', async () => {
     mockedAuthService.login.mockResolvedValue(authResponse)
     const store = useAuthStore()
 
-    const ok = await store.login({ email: 'ana@mail.com', password: 'secret123' })
+    const outcome = await store.login({ email: 'ana@mail.com', password: 'secret123' })
 
-    expect(ok).toBe(true)
+    expect(outcome).toBe('authenticated')
     expect(store.isAuthenticated).toBe(true)
     expect(store.user).toEqual(authResponse.user)
     expect(localStorage.getItem(AUTH_TOKEN_KEY)).toBe('token-123')
+    expect(localStorage.getItem(REFRESH_TOKEN_KEY)).toBe('refresh-123')
+  })
+
+  it('holds a challenge without a session when the account has 2FA', async () => {
+    mockedAuthService.login.mockResolvedValue({ twoFactorRequired: true, twoFactorToken: 'challenge-abc' })
+    const store = useAuthStore()
+
+    const outcome = await store.login({ email: 'ana@mail.com', password: 'secret123' })
+
+    expect(outcome).toBe('two-factor')
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.hasTwoFactorChallenge).toBe(true)
+    expect(localStorage.getItem(AUTH_TOKEN_KEY)).toBeNull()
+  })
+
+  it('completes the session when the 2FA code is verified', async () => {
+    mockedAuthService.login.mockResolvedValue({ twoFactorRequired: true, twoFactorToken: 'challenge-abc' })
+    mockedAuthService.verifyTwoFactor.mockResolvedValue({
+      ...authResponse,
+      user: { ...authResponse.user, twoFactorEnabled: true },
+    })
+    const store = useAuthStore()
+    await store.login({ email: 'ana@mail.com', password: 'secret123' })
+
+    const ok = await store.verifyTwoFactor('123456')
+
+    expect(ok).toBe(true)
+    expect(mockedAuthService.verifyTwoFactor).toHaveBeenCalledWith('challenge-abc', '123456')
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.hasTwoFactorChallenge).toBe(false)
   })
 
   it('exposes a ProblemDetails error and stays unauthenticated on invalid credentials', async () => {
@@ -58,22 +92,25 @@ describe('auth store', () => {
     mockedAuthService.login.mockRejectedValue(error)
     const store = useAuthStore()
 
-    const ok = await store.login({ email: 'ana@mail.com', password: 'wrong' })
+    const outcome = await store.login({ email: 'ana@mail.com', password: 'wrong' })
 
-    expect(ok).toBe(false)
+    expect(outcome).toBe('error')
     expect(store.isAuthenticated).toBe(false)
     expect(store.error?.status).toBe(401)
   })
 
-  it('clears the session on logout', async () => {
+  it('clears the session and revokes the refresh token on logout', async () => {
     mockedAuthService.login.mockResolvedValue(authResponse)
+    mockedAuthService.logout.mockResolvedValue()
     const store = useAuthStore()
     await store.login({ email: 'ana@mail.com', password: 'secret123' })
 
-    store.logout()
+    await store.logout()
 
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(localStorage.getItem(AUTH_TOKEN_KEY)).toBeNull()
+    expect(localStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull()
+    expect(mockedAuthService.logout).toHaveBeenCalledWith('refresh-123')
   })
 })

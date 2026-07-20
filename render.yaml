@@ -17,7 +17,11 @@ services:
       - key: Jwt__Audience
         value: GestorGastos
       - key: Jwt__ExpiryMinutes
-        value: "60"
+        value: "15"
+      # 32-byte base64 key to encrypt TOTP secrets at rest. Set manually
+      # (e.g. `openssl rand -base64 32`); must stay stable across deploys.
+      - key: Totp__EncryptionKey
+        sync: false
 
   - type: web
     name: gestor-gastos-web

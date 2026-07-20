@@ -21,6 +21,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash).HasMaxLength(200).IsRequired();
         builder.Property(u => u.DisplayName).HasMaxLength(100).IsRequired();
 
+        builder.Property(u => u.FailedLoginAttempts).HasDefaultValue(0);
+        builder.Property(u => u.TwoFactorEnabled).HasDefaultValue(false);
+        builder.Property(u => u.TwoFactorSecret).HasColumnType("bytea");
+
         builder.Property(u => u.CreatedAt).HasDefaultValueSql("now()");
         builder.Property(u => u.UpdatedAt).HasDefaultValueSql("now()");
         builder.Property(u => u.Active).HasDefaultValue(true);

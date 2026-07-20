@@ -56,8 +56,12 @@ function fieldError(field: string): string | undefined {
 }
 
 async function onSubmit(): Promise<void> {
-  const ok = await authStore.login({ email: email.value, password: password.value })
-  if (ok) {
+  const outcome = await authStore.login({ email: email.value, password: password.value })
+  if (outcome === 'two-factor') {
+    router.push({ name: 'login-2fa' })
+    return
+  }
+  if (outcome === 'authenticated') {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirect)
   }
