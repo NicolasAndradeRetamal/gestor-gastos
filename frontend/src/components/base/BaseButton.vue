@@ -60,7 +60,7 @@ const classes = computed(() => [
   VARIANT_CLASSES[props.variant ?? 'primary'],
 ])
 
-// Icon-only buttons use a bigger icon at the default 44px area (20px) than at
+// Icon-only buttons use a bigger icon at the default 44px area (24px) than at
 // the 32px compact variant (16px); buttons with a visible label always use 16px.
-const iconClass = computed(() => (props.iconOnly && props.size !== 'compact' ? 'size-5' : 'size-4'))
+const iconClass = computed(() => (props.iconOnly && props.size !== 'compact' ? 'size-6' : 'size-4'))
 </script>

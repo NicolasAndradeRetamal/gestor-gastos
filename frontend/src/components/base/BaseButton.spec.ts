@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 describe('BaseButton', () => {
-  it('uses a 44px tap target with a 20px icon for icon-only buttons by default', () => {
+  it('uses a 44px tap target with a 24px icon for icon-only buttons by default', () => {
     render(BaseButton, { props: { iconOnly: true, icon: 'close' }, attrs: { 'aria-label': 'Cerrar' } })
 
     const button = screen.getByRole('button', { name: 'Cerrar' })
     expect(button.className).toContain('size-11')
-    expect(button.querySelector('svg')?.getAttribute('class')).toContain('size-5')
+    expect(button.querySelector('svg')?.getAttribute('class')).toContain('size-6')
   })
 
   it('uses a 32px tap target with a 16px icon for the compact icon-only variant', () => {
