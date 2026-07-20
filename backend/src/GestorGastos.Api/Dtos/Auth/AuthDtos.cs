@@ -4,7 +4,7 @@ public record RegisterRequest(string Email, string Password, string DisplayName)
 
 public record LoginRequest(string Email, string Password);
 
-public record UserDto(Guid Id, string Email, string DisplayName, bool TwoFactorEnabled);
+public record UserDto(Guid Id, string Email, string DisplayName, bool TwoFactorEnabled, DateTimeOffset? TwoFactorEnabledAt);
 
 public record AuthResponse(
     string Token,
