@@ -33,47 +33,15 @@
         </a>
       </RouterLink>
     </nav>
-    <div class="mt-auto flex items-center gap-3 border-t border-line p-3">
-      <span
-        class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary"
-        aria-hidden="true"
-      >
-        {{ initials }}
-      </span>
-      <span class="truncate text-sm font-medium text-ink">{{ authStore.user?.displayName }}</span>
-      <BaseButton
-        variant="ghost"
-        icon-only
-        icon="logout"
-        class="ml-auto"
-        aria-label="Cerrar sesión"
-        @click="onLogout"
-      >
-        Cerrar sesión
-      </BaseButton>
-      <ThemeToggle />
-    </div>
+    <UserMenu variant="sidebar" :display-name="authStore.user?.displayName ?? '?'" :email="authStore.user?.email" />
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-
 import AppIcon from '@/components/base/AppIcon.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
-import ThemeToggle from '@/components/base/ThemeToggle.vue'
+import UserMenu from '@/components/layout/UserMenu.vue'
 import { NAV_ITEMS } from '@/components/layout/navItems'
-import { getInitials } from '@/composables/useInitials'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
-const router = useRouter()
-
-const initials = computed(() => getInitials(authStore.user?.displayName ?? '?'))
-
-function onLogout(): void {
-  authStore.logout()
-  router.push({ name: 'login' })
-}
 </script>

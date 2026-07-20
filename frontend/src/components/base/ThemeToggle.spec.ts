@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // ThemeToggle relies on useTheme's module-level singleton, so each test
 // re-imports the component fresh after resetting modules and storage.
-async function renderToggle(props?: { variant?: 'icon' | 'menu-item' }) {
+async function renderToggle() {
   const { default: ThemeToggle } = await import('@/components/base/ThemeToggle.vue')
-  return render(ThemeToggle, { props })
+  return render(ThemeToggle)
 }
 
 describe('ThemeToggle', () => {
@@ -16,10 +16,10 @@ describe('ThemeToggle', () => {
     delete document.documentElement.dataset.theme
   })
 
-  it('shows the sun icon and offers to switch to dark mode when light is active', async () => {
+  it('renders as a labelled menu row and offers to switch to dark mode when light is active', async () => {
     await renderToggle()
 
-    expect(screen.getByRole('button', { name: 'Cambiar a modo oscuro' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Modo oscuro' })).toBeInTheDocument()
   })
 
   it('starts in dark mode when the user already chose it, offering to switch to light', async () => {
@@ -27,23 +27,17 @@ describe('ThemeToggle', () => {
 
     await renderToggle()
 
-    expect(screen.getByRole('button', { name: 'Cambiar a modo claro' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Modo claro' })).toBeInTheDocument()
   })
 
   it('toggles the theme on click, updates its own label and persists the choice', async () => {
     const user = userEvent.setup()
     await renderToggle()
 
-    await user.click(screen.getByRole('button', { name: 'Cambiar a modo oscuro' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Modo oscuro' }))
 
-    expect(screen.getByRole('button', { name: 'Cambiar a modo claro' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Modo claro' })).toBeInTheDocument()
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(localStorage.getItem('theme')).toBe('dark')
-  })
-
-  it('renders as a labelled row for the mobile user menu', async () => {
-    await renderToggle({ variant: 'menu-item' })
-
-    expect(screen.getByRole('menuitem', { name: 'Modo oscuro' })).toBeInTheDocument()
   })
 })
