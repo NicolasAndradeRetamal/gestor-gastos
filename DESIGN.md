@@ -1282,6 +1282,47 @@ Cuerpo:
 **Borrado**: modal de confirmación (§3.6) `¿Eliminar esta plantilla? Los gastos
 que ya generó no se ven afectados.` + botón peligro `Eliminar`.
 
+### 4.11 Importar / exportar CSV
+
+Acceso desde la vista de Gastos (§4.4). Para no saturar la cabecera, las acciones
+secundarias (`Gastos recurrentes`, `Importar CSV`, `Exportar CSV`) se agrupan en
+un **menú desplegable** `Más` (botón secundario con icono `chevron-down`, patrón
+de popover accesible como el menú de usuario §3.7: `role="menu"`, cierre con
+`Escape` y clic fuera); el botón primario `Añadir gasto` se mantiene aparte.
+
+**Exportar.** `Exportar CSV` descarga los gastos con **los filtros activos** de la
+vista (rango de fechas y categoría). Es una acción directa: llama a
+`GET /api/expenses/export`, recibe el `text/csv` y dispara la descarga
+(`gastos.csv`) en el cliente. Si no hay gastos que exportar, toast informativo
+`No hay gastos para exportar con los filtros actuales.`
+
+**Importar.** `Importar CSV` lleva a una vista dedicada `/import` (la tabla de
+previsualización necesita ancho). Flujo por pasos:
+
+1. **Selección de archivo.** Zona `border border-dashed border-line rounded-lg p-6
+   text-center` con icono, texto `Arrastra tu archivo CSV o selecciónalo.` y un
+   input de archivo (`accept=".csv"`). Debajo, un enlace `Descargar plantilla de
+   ejemplo` y la descripción del formato esperado (`fecha, categoria, monto,
+   nota`).
+2. **Previsualización** (tras subir a `POST /api/expenses/import/preview`):
+   - Resumen `flex gap-3`: badge verde `{n} válidas` (icono `check`) y, si hay,
+     badge `danger` `{n} con errores` (icono `alert-circle`).
+   - **Tabla** (§3.4) con una fila por línea del CSV: `#`, `Fecha`, `Categoría`,
+     `Monto`, `Nota`, `Estado`. Las filas con error se marcan con fondo
+     `bg-danger-soft`, un icono `alert-circle` `text-danger` y el/los mensajes de
+     error (`text-xs text-danger`) en la celda de estado; las válidas, icono
+     `check` `text-success`. Contenedor con `overflow-x-auto`.
+   - Pie de acciones `flex justify-end gap-3`: `Cancelar` (secundario, descarta y
+     vuelve al paso 1) + `Importar {n} gastos` (primario, deshabilitado si
+     `validas === 0`, con estado de carga). Solo se envían las filas válidas a
+     `POST /api/expenses/import`.
+3. **Resultado.** Al confirmar: toast de éxito `Se importaron {n} gastos.` y
+   redirección a `/expenses` (la lista se recarga). Error de servidor: banner de
+   error (§3.9) con opción de reintentar.
+
+Estados: archivo no CSV / vacío / columnas faltantes → banner `role="alert"` con
+el mensaje del `400`. Carga (parseo o importación) → botón en estado de carga.
+
 ---
 
 ## 5. Accesibilidad
