@@ -38,6 +38,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Gastos' },
     },
     {
+      path: '/budgets',
+      name: 'budgets',
+      component: () => import('@/views/BudgetsView.vue'),
+      meta: { requiresAuth: true, title: 'Presupuestos' },
+    },
+    {
       path: '/categories',
       name: 'categories',
       component: () => import('@/views/CategoriesView.vue'),

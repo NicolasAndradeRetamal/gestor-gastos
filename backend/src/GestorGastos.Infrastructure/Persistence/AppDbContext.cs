@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<TwoFactorRecoveryCode> TwoFactorRecoveryCodes => Set<TwoFactorRecoveryCode>();
 
@@ -20,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<User>().HasQueryFilter(u => u.Active);
         modelBuilder.Entity<Category>().HasQueryFilter(c => c.Active);
         modelBuilder.Entity<Expense>().HasQueryFilter(e => e.Active);
+        modelBuilder.Entity<Budget>().HasQueryFilter(b => b.Active);
         modelBuilder.Entity<RefreshToken>().HasQueryFilter(t => t.Active);
         modelBuilder.Entity<TwoFactorRecoveryCode>().HasQueryFilter(c => c.Active);
 
