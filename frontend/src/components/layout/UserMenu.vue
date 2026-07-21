@@ -54,6 +54,15 @@
         type="button"
         role="menuitem"
         class="flex h-11 w-full items-center gap-2 rounded-md px-3 text-sm font-medium text-ink-muted hover:bg-surface-sunken"
+        @click="onNavigate('security')"
+      >
+        <AppIcon name="shield" class="size-5" />
+        Seguridad
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        class="flex h-11 w-full items-center gap-2 rounded-md px-3 text-sm font-medium text-ink-muted hover:bg-surface-sunken"
         @click="onLogout"
       >
         <AppIcon name="logout" class="size-5" />
@@ -123,9 +132,14 @@ function onTab(event: KeyboardEvent): void {
   trapTabKey(event, menuRef.value)
 }
 
+function onNavigate(name: string): void {
+  closeMenu()
+  router.push({ name })
+}
+
 function onLogout(): void {
   closeMenu()
-  authStore.logout()
+  void authStore.logout()
   router.push({ name: 'login' })
 }
 </script>

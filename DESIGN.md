@@ -595,10 +595,18 @@ el lugar convencional de las acciones de cuenta. Popover
    truncate`). `role="presentation"`.
 2. **Fila `ThemeToggle`** (§3.10, variante `menu-item`): icono sol/luna
    `size-5` a la izquierda + texto `Modo claro` / `Modo oscuro`.
-3. **Divisor** `my-1 border-t border-line` — separa el ajuste de apariencia de
-   la acción destructiva, para que `Cerrar sesión` no quede pegado a un control
-   que se pulsa a menudo.
-4. **Fila `Cerrar sesión`**: `role="menuitem"`,
+3. **Fila `Seguridad`**: `role="menuitem"`, mismo patrón de fila que las demás
+   (`flex h-11 w-full items-center gap-2 rounded-md px-3 text-sm font-medium
+   text-ink-muted hover:bg-surface-sunken`), icono `shield` `size-5` a la
+   izquierda + texto `Seguridad`. Navega a `/security` (§4.8) como `router-link`;
+   es la puerta de entrada a la gestión de la cuenta (verificación en dos
+   pasos). Sigue el patrón estándar de agrupar los ajustes de cuenta bajo el
+   avatar (Gmail, GitHub, Linear), no en la navegación principal. Suma el icono
+   `shield` al set de `AppIcon`.
+4. **Divisor** `my-1 border-t border-line` — separa los ajustes de cuenta de la
+   acción destructiva, para que `Cerrar sesión` no quede pegado a controles que
+   se pulsan a menudo.
+5. **Fila `Cerrar sesión`**: `role="menuitem"`,
    `flex h-11 w-full items-center gap-2 rounded-md px-3 text-sm font-medium
    text-ink-muted hover:bg-surface-sunken`, icono `logout` `size-5` a la
    izquierda + texto. Es la última fila y la única destructiva.
@@ -613,8 +621,8 @@ principales) + topbar simple:
   nombre de la vista actual (`H1` reducido a `text-lg font-bold`) a la
   izquierda, y a la derecha el avatar del usuario (`size-9`, botón con
   `aria-haspopup="menu"`) que abre el **mismo `UserMenu`** descrito arriba
-  (encabezado + `ThemeToggle` + divisor + `Cerrar sesión`), anclado hacia
-  abajo desde el avatar.
+  (encabezado + `ThemeToggle` + `Seguridad` + divisor + `Cerrar sesión`),
+  anclado hacia abajo desde el avatar.
 - Tab bar inferior: `fixed inset-x-0 bottom-0 z-10 flex border-t border-line bg-surface-raised pb-[env(safe-area-inset-bottom)]`,
   tres botones iguales (`Dashboard`, `Gastos`, `Categorías`)
   `flex-1 flex flex-col items-center justify-center gap-0.5 h-16 text-xs font-medium text-ink-muted`
@@ -731,11 +739,55 @@ depender solo del icono.
 - El estado nunca depende únicamente del color: el icono cambia de forma
   (sol ↔ luna) y el `aria-label`/texto visible cambian junto con él.
 
-### 3.11 Barra de progreso de presupuesto (`BudgetProgress`)
+### 3.11 Campo de código de un solo uso (`OtpInput`)
+
+Campo especializado para introducir un código de verificación: el TOTP de 6
+dígitos de una app autenticadora o un código de recuperación `XXXXX-XXXXX`. Se
+usa en la verificación de login (§4.7), en la confirmación de alta de 2FA y en
+el modal de desactivación (§4.8).
+
+**Decisión: un único `<input>`, no seis casillas separadas.** Un campo único es
+más robusto para el autorrelleno del sistema (`autocomplete="one-time-code"`
+autocompleta de una vez desde el teclado del móvil o el gestor de contraseñas),
+para pegar un código copiado y para los lectores de pantalla (un solo control
+con un solo `label`), frente al patrón de seis casillas que fragmenta el foco,
+complica el pegado y anuncia seis campos sin etiqueta. El aspecto "de código" se
+logra con tipografía y espaciado de letras, no con múltiples inputs.
+
+Estructura: hereda la anatomía y estados del input de texto (§3.2) —
+`<label>` visible arriba, control, ayuda/error debajo— con estas
+particularidades:
+
+- **Control**: `w-full h-14 rounded-md border border-line bg-surface-raised
+  text-center text-2xl font-semibold tabular-nums text-ink transition-colors`.
+  Alto `h-14` (56px) mayor que un input normal por ser el foco de la pantalla y
+  cómodo objetivo táctil.
+- **Variante `totp`** (por defecto — login paso 2, confirmación de alta):
+  `type="text"`, `inputmode="numeric"`, `autocomplete="one-time-code"`,
+  `pattern="\d{6}"`, `maxlength="6"`, `tracking-[0.5em]` (dígitos espaciados),
+  `placeholder="000000"`. Label `Código de verificación` (o `Código de
+  confirmación` en el alta). Ayuda: `Introduce el código de 6 dígitos de tu
+  aplicación autenticadora.` Puede enviar el formulario automáticamente al
+  completar los 6 dígitos, además del botón explícito.
+- **Variante `recovery`** (login paso 2 alternativo; también la del modal de
+  desactivación, que acepta ambos formatos): `type="text"`, `inputmode="text"`,
+  `autocomplete="one-time-code"`, `maxlength="11"`, transforma a mayúsculas
+  (`uppercase`), `tracking-wider`, `placeholder="XXXXX-XXXXX"`. Ayuda:
+  `Introduce uno de tus códigos de recuperación (formato XXXXX-XXXXX).`
+- **Estados** (heredados de §3.2): hover `hover:border-ink-muted`; focus anillo
+  global + `border-primary`; inválido `border-danger` + anillo `outline-danger`
+  con `aria-invalid="true"` y `aria-describedby` hacia el mensaje de error
+  (`role="alert"`, §3.2); deshabilitado `disabled:bg-surface-sunken
+  disabled:text-ink-muted` mientras se verifica; carga gestionada por el botón
+  de envío (§3.1), no por el campo.
+- Tras un error de código, el campo se limpia y recupera el foco para reintentar
+  sin borrado manual.
+
+### 3.12 Barra de progreso de presupuesto (`BudgetProgress`)
 
 Muestra el gasto del mes en curso frente al límite de una categoría, con un
 estado visual que nunca depende solo del color. Se usa en el Dashboard (§4.3) y
-en la vista de presupuestos (§4.7).
+en la vista de presupuestos (§4.9).
 
 Anatomía (de arriba a abajo), dentro de una fila o tarjeta:
 
@@ -812,6 +864,15 @@ Contenido de la tarjeta (de arriba a abajo):
    registro).
 
 Tras login/registro exitoso, redirección a `/` (Dashboard).
+
+**Login con verificación en dos pasos.** Si el usuario tiene 2FA activa, el
+paso 1 del login no devuelve la sesión sino un desafío
+(`{ twoFactorRequired: true, twoFactorToken }`). En ese caso no se redirige al
+Dashboard: se guarda el `twoFactorToken` en memoria (store de auth, **nunca** en
+`localStorage`) y se navega a la pantalla de verificación en dos pasos
+(`/login/2fa`, §4.7), que completa el segundo paso antes de entrar. El banner de
+error de credenciales (`401`) no aplica a este caso: el paso 1 solo devuelve el
+desafío cuando email y contraseña ya son correctos.
 
 ### 4.3 Dashboard (`/`)
 
@@ -956,12 +1017,188 @@ de gasto. Se señala aquí para que arquitectura confirme o ajuste la lista de
 rutas/vistas si se prefiere otro enfoque (p. ej. un panel dentro de
 `Configuración` en una fase posterior).
 
-### 4.7 Presupuestos (`/budgets`)
+### 4.7 Verificación en dos pasos — login (`/login/2fa`)
+
+Propósito: segundo paso del inicio de sesión para usuarios con 2FA activa.
+Completa la autenticación introduciendo un código temporal (TOTP) o, si el
+usuario perdió el acceso a su app, un código de recuperación.
+
+Layout: el **mismo layout de autenticación que §4.2**, sin sidebar ni tab bar —
+columna única centrada, `min-h-dvh flex items-center justify-center p-4
+bg-surface`, tarjeta `w-full max-w-sm` (`p-6 sm:p-8`).
+
+Ruta y acceso: se llega **solo** desde el paso 1 del login, cuando la API
+responde `{ twoFactorRequired: true, twoFactorToken }`. El `twoFactorToken`
+(JWT efímero de 5 min) vive en memoria (store de auth). Si se navega a
+`/login/2fa` sin un `twoFactorToken` en memoria (entrada directa por URL o
+recarga de página), no hay desafío que resolver: se redirige a `/login`.
+
+Contenido de la tarjeta (de arriba a abajo):
+
+1. Nombre/logo de la app centrado, igual que §4.2, `mb-6`.
+2. `H2`: `Verificación en dos pasos`.
+3. Texto de ayuda `text-sm text-ink-muted`: `Introduce el código de 6 dígitos
+   de tu aplicación autenticadora.` (cambia según la variante, ver abajo).
+4. Formulario (`space-y-4`):
+   - `OtpInput` variante `totp` (§3.11) con `autofocus`, label `Código de
+     verificación`.
+   - Botón primario de ancho completo (`w-full`): `Verificar`, con estado de
+     carga mientras `POST /api/auth/2fa/verify` está en curso (spinner + texto
+     `sr-only` `Verificando…`, `aria-busy`, campo deshabilitado).
+5. Enlace secundario centrado debajo (`text-sm text-primary font-semibold mt-6`):
+   `¿Perdiste tu dispositivo? Usa un código de recuperación`. Al pulsarlo, el
+   `OtpInput` cambia a la variante `recovery` (§3.11), la ayuda pasa a
+   `Introduce uno de tus códigos de recuperación (formato XXXXX-XXXXX).` y
+   aparece el enlace inverso `Usar el código de la aplicación` para volver a la
+   variante `totp`. El endpoint es el mismo (`code` acepta ambos formatos).
+
+Estados:
+
+- **Código incorrecto (`401`)**: banner de error encima del formulario, mismo
+  patrón que §4.2 (`bg-danger-soft border border-danger/30 rounded-lg p-3
+  text-sm text-danger mb-4`, `role="alert"`), texto `Código incorrecto. Vuelve a
+  intentarlo.`; el `OtpInput` pasa a inválido, se limpia y recupera el foco.
+- **Desafío expirado (`401` por `twoFactorToken` vencido a los 5 min)**: banner
+  `role="alert"` con `Tu sesión de verificación expiró. Inicia sesión de nuevo.`
+  y botón `Volver a iniciar sesión`; se descarta el `twoFactorToken` de memoria
+  y se navega a `/login`.
+- **Rate limit (`429`)**: banner de aviso `Has hecho demasiados intentos. Espera
+  un momento e inténtalo de nuevo.` (respeta `Retry-After`).
+- **Carga**: botón `Verificar` en estado de carga (§3.1), campo deshabilitado.
+- **Éxito (`200`)**: la respuesta es una sesión completa (`token`, `expiresAt`,
+  `refreshToken`, `refreshTokenExpiresAt`, `user`); se persiste igual que un
+  login normal y se redirige a `/` (Dashboard).
+
+### 4.8 Seguridad de la cuenta (`/security`)
+
+Propósito: gestión de la seguridad de la cuenta. En esta fase su único contenido
+es la verificación en dos pasos (activarla, ver su estado y desactivarla); queda
+como superficie para futuras opciones de cuenta.
+
+Ruta y acceso: ruta protegida `/security`, accesible desde la fila `Seguridad`
+del menú de usuario (§3.7). **No** figura en la navegación principal (sidebar /
+tab bar), igual que las páginas de cuenta en las apps de referencia. Usa el
+layout general de la app (§4.1): sidebar en escritorio, topbar + tab bar en
+móvil, sin ningún destino de navegación resaltado (no es una de las tres
+secciones principales). `H1`: `Seguridad`, seguido de `space-y-6`.
+
+Núcleo de la vista: una tarjeta (§3.3) de **verificación en dos pasos** cuyo
+cuerpo cambia según `user.twoFactorEnabled` (obtenido de `GET /api/auth/me`).
+
+Cabecera de la tarjeta: fila `flex items-center justify-between gap-2 mb-4` con
+`H2` `Verificación en dos pasos` a la izquierda y, a la derecha, un indicador de
+estado (nunca solo color — lleva icono + texto):
+
+- Inactiva: badge neutro `inline-flex items-center gap-1.5 h-7 rounded-full px-2.5
+  text-xs font-medium bg-surface-sunken text-ink-muted` con icono `shield` +
+  texto `Desactivada`.
+- Activa: badge `bg-success-soft text-ink` con icono `check` `text-success` +
+  texto `Activada`.
+
+**Estado A — inactiva.**
+
+- Texto explicativo `text-sm text-ink-muted`: `Añade una capa extra de
+  seguridad. Cuando la actives, al iniciar sesión te pediremos un código
+  temporal de tu aplicación autenticadora, además de tu contraseña.`
+- Botón primario `Activar verificación en dos pasos` → `POST /api/auth/2fa/setup`
+  (estado de carga); al responder, pasa al estado B.
+
+**Estado B — alta en curso** (tras `setup`; flujo de varios pasos in-page, no
+modal, porque combina QR, clave, campo de confirmación y necesita el ancho de la
+tarjeta). Pasos numerados dentro del cuerpo:
+
+1. Instrucción `text-sm text-ink`: `Escanea este código QR con tu aplicación
+   autenticadora (Google Authenticator, Authy, 1Password u otra).`
+2. **QR**: imagen generada en el cliente a partir de `otpauthUri` (librería
+   `qrcode`), `w-44 h-44` (176px) centrada, `border border-line rounded-lg p-3
+   bg-white`. **Excepción de color documentada**: el QR se pinta siempre sobre
+   `bg-white` fijo (no `surface-raised`) en ambos modos, porque un lector de QR
+   necesita módulos oscuros sobre fondo claro; invertirlo en modo oscuro
+   rompería el escaneo. `alt="Código QR para configurar la verificación en dos
+   pasos"`.
+3. **Alternativa manual**: `¿No puedes escanear el código? Introduce esta clave
+   en tu aplicación:` + el `secret` (base32) en un bloque `bg-surface-sunken
+   rounded-md px-3 py-2 font-semibold tabular-nums tracking-wider text-ink
+   break-all` con un botón secundario compacto `Copiar` (icono `copy` `size-4` +
+   texto). Al copiar, feedback inmediato: el botón cambia a icono `check` +
+   `Copiado` durante ~2 s.
+4. **Confirmación**: `OtpInput` variante `totp` (§3.11), label `Código de
+   confirmación`, ayuda `Introduce el código de 6 dígitos que muestra tu
+   aplicación para confirmar.`
+5. **Pie de acciones** `flex items-center justify-end gap-3`: botón secundario
+   `Cancelar` (descarta el alta y vuelve al estado A; el secreto pendiente queda
+   sin activar) + botón primario `Confirmar y activar` → `POST /api/auth/2fa/enable`
+   (estado de carga).
+   - Error `400` (código inválido): el `OtpInput` pasa a inválido con mensaje
+     `El código no es correcto. Comprueba que la hora de tu dispositivo esté
+     sincronizada e inténtalo de nuevo.`
+
+**Pantalla de códigos de recuperación** (tras `enable`, que devuelve
+`recoveryCodes[]`). Reemplaza el cuerpo de la tarjeta; se muestra **una sola
+vez** y no se puede abandonar por accidente (no hay cierre implícito: se sale
+solo confirmando el checkbox). Contenido:
+
+1. Aviso destacado `bg-warning-soft border border-warning/30 rounded-lg p-3
+   flex items-start gap-2` con icono de alerta `text-warning` `size-5` y texto
+   `text-sm text-ink`: `Guarda estos códigos en un lugar seguro. Son la única
+   forma de entrar si pierdes el acceso a tu aplicación autenticadora, y no
+   volverás a verlos.`
+2. `H3` `Tus códigos de recuperación`.
+3. Grilla de los 10 códigos: `grid grid-cols-2 gap-2`, cada código
+   `bg-surface-sunken rounded-md px-3 py-2 text-center font-semibold tabular-nums
+   tracking-wider text-ink`.
+4. Acciones `flex gap-3`: botón secundario `Copiar` (copia los 10 al
+   portapapeles, feedback `Copiado` ~2 s) + botón secundario `Descargar`
+   (fichero `.txt`).
+5. Checkbox obligatorio (§3.2): `Guardé mis códigos de recuperación en un lugar
+   seguro.`
+6. Botón primario `Finalizar`, `disabled` (`disabled:opacity-50
+   disabled:cursor-not-allowed`) hasta que el checkbox esté marcado; al pulsarlo,
+   se pasa al estado C y se muestra un toast de éxito `Verificación en dos pasos
+   activada.` (§3.8).
+
+**Estado C — activa.**
+
+- Cabecera con el badge `Activada`.
+- Texto `text-sm text-ink-muted`: `La verificación en dos pasos está activa desde
+  el {fecha}.`, donde `{fecha}` incluye día, mes y año (p. ej. `20 jul 2026`,
+  formato es-ES) para que sea inequívoca fuera de contexto.
+- Botón peligro `Desactivar` → abre el modal de desactivación.
+
+**Desactivación — modal** (§3.6). Al ser destructivo, no se cierra al hacer click
+fuera; requiere respuesta explícita.
+
+- Cabecera: `H2` `Desactivar verificación en dos pasos` + botón cerrar
+  icon-only (§3.6).
+- Cuerpo: aviso `text-sm text-ink-muted` `Al desactivarla, tu cuenta quedará
+  protegida solo con la contraseña. Para confirmar, introduce tu contraseña y un
+  código.` + formulario `space-y-4`:
+  - `Contraseña` (input `type="password"`, §3.2), label `Contraseña actual`.
+  - `OtpInput` variante `recovery` (§3.11, acepta TOTP o código de
+    recuperación), label `Código`, ayuda `Un código de 6 dígitos de tu app o uno
+    de tus códigos de recuperación.`
+- Pie (`flex items-center justify-end gap-3 mt-6`): botón secundario `Cancelar`
+  + botón peligro `Desactivar` → `POST /api/auth/2fa/disable` (estado de carga).
+- Error `401` (contraseña **o** código incorrectos): banner dentro del modal
+  `bg-danger-soft border border-danger/30 rounded-lg p-3 text-sm text-danger`,
+  `role="alert"`, texto conjunto `La contraseña o el código no son correctos.`
+  (no revela cuál de los dos falló); ambos campos marcan estado inválido.
+- Éxito (`204`): se cierra el modal, la tarjeta vuelve al estado A y aparece un
+  toast de éxito `Verificación en dos pasos desactivada.` (§3.8).
+
+**Carga y error de la vista**:
+
+- Primera carga: skeleton de la tarjeta (§3.9) mientras `GET /api/auth/me`
+  resuelve.
+- Fallo al cargar el estado: estado de error de vista (§3.9) con botón
+  `Reintentar`.
+
+### 4.9 Presupuestos (`/budgets`)
 
 Propósito: fijar un límite mensual de gasto por categoría y seguir el progreso
 del mes en curso. Ruta protegida `/budgets`, cuarto destino de la navegación
-principal (§3.7: sidebar en escritorio, tab bar en móvil), con icono `wallet` (o
-`target`) y etiqueta `Presupuestos`.
+principal (§3.7: sidebar en escritorio, tab bar en móvil), con icono `wallet` y
+etiqueta `Presupuestos`.
 
 Layout (§4.1): `H1` `Presupuestos` + botón primario `+ Crear presupuesto` a la
 derecha en `md:` (ancho completo bajo el título en móvil), seguido de
@@ -969,11 +1206,10 @@ derecha en `md:` (ancho completo bajo el título en móvil), seguido de
 
 Cuerpo:
 
-1. **Lista de presupuestos**, una tarjeta (§3.3) por presupuesto, `space-y-3` o
-   grilla `grid gap-3 sm:grid-cols-2`. Cada tarjeta contiene un `BudgetProgress`
-   (§3.11) y, alineados a la derecha de la cabecera o en un pie, botones fantasma
-   icon-only `Editar` (`edit`) y `Eliminar` (`trash`) compactos (mismo patrón que
-   la tabla de gastos, §3.4).
+1. **Lista de presupuestos**, una tarjeta (§3.3) por presupuesto, grilla
+   `grid gap-3 sm:grid-cols-2`. Cada tarjeta contiene un `BudgetProgress`
+   (§3.12) y, a la derecha, botones fantasma icon-only `Editar` (`edit`) y
+   `Eliminar` (`trash`) compactos (mismo patrón que la tabla de gastos, §3.4).
 2. **Estado vacío** (§3.9) cuando el usuario no tiene presupuestos: icono
    `wallet`, texto `Todavía no tienes presupuestos. Crea uno para controlar tu
    gasto mensual por categoría.` + botón `Crear presupuesto`.
@@ -983,14 +1219,13 @@ Cuerpo:
 **Alta/edición** — modal (§3.6), formulario `BudgetForm` `space-y-4`:
 
 - `Categoría` (select, §3.2): en **alta**, lista de categorías del usuario
-  (globales + propias) que **aún no tienen** presupuesto (cada opción con el punto
-  de color, §3.5); en **edición**, la categoría se muestra fija (deshabilitada),
-  porque la categoría es la identidad del presupuesto.
-- `Límite mensual` (número, `inputmode="decimal"`, placeholder `0.00`, prefijo de
-  moneda no necesario al ser moneda única), ayuda `El importe máximo que quieres
-  gastar en esta categoría cada mes.`
+  (globales + propias) que **aún no tienen** presupuesto; en **edición**, la
+  categoría se muestra fija (deshabilitada), porque la categoría es la identidad
+  del presupuesto.
+- `Límite mensual` (número, `inputmode="decimal"`, placeholder `0.00`), ayuda
+  `El importe máximo que quieres gastar en esta categoría cada mes.`
 - Pie: `Cancelar` + `Guardar presupuesto` / `Guardar cambios` (primario, estado
-  de carga mientras `POST`/`PUT`).
+  de carga).
 - Error `409` (ya existe presupuesto para la categoría): error de campo en
   `Categoría` (`Ya tienes un presupuesto para esta categoría.`). Error `400`
   (importe inválido): error de campo en `Límite mensual`.
@@ -1000,12 +1235,11 @@ El gasto registrado no se ve afectado.` + botón peligro `Eliminar`.
 
 **Sección en el Dashboard (§4.3).** Cuando el usuario tiene al menos un
 presupuesto, el Dashboard muestra, bajo la tarjeta de total, una tarjeta
-`Presupuestos del mes` con hasta los presupuestos ordenados por porcentaje
-descendente (los más ajustados primero), cada uno como un `BudgetProgress`
-(§3.11), y un enlace `Gestionar presupuestos` a `/budgets`. Si no hay
-presupuestos, la sección no aparece (no añade ruido a quien no los usa). Los
-datos salen de `GET /api/budgets`; su carga es independiente del
-`summary` y muestra su propio skeleton (`h-24`).
+`Presupuestos del mes` con los presupuestos ordenados por porcentaje descendente
+(los más ajustados primero), cada uno como un `BudgetProgress` (§3.12), y un
+enlace `Gestionar presupuestos` a `/budgets`. Si no hay presupuestos, la sección
+no aparece. Los datos salen de `GET /api/budgets`, con carga independiente del
+`summary`.
 
 ---
 
@@ -1039,6 +1273,15 @@ datos salen de `GET /api/budgets`; su carga es independiente del
   campos inválidos (color + icono + mensaje de texto + `aria-invalid`),
   estado seleccionado del selector de color de categoría (color + check +
   `aria-checked`).
+- **Campos de código de un solo uso**: el `OtpInput` (§3.11) usa `label`
+  visible, `inputmode="numeric"` (variante TOTP) o `inputmode="text"` (variante
+  código de recuperación) y `autocomplete="one-time-code"` para permitir el
+  autorrelleno del código desde el teclado del sistema o el gestor de
+  contraseñas; `aria-invalid` y `aria-describedby` apuntan al mensaje de error
+  (`role="alert"`), y su alto `h-14` supera el objetivo táctil mínimo. El QR del
+  alta de 2FA lleva `alt` descriptivo y va **siempre** acompañado de la clave en
+  texto (introducción manual), de modo que activar 2FA no depende de poder
+  escanear un código.
 - **Roles y regiones vivas**: `role="alert"` en errores y mensajes de campo
   inválido; `role="status"` en spinners, skeletons y toasts de
   éxito/info; `role="dialog"` + `aria-modal="true"` + `aria-labelledby` en

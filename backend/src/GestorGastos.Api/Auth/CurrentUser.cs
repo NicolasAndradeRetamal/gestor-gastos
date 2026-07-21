@@ -15,4 +15,8 @@ public static class CurrentUser
 
         return id;
     }
+
+    /// <summary>Client IP (honoring forwarded headers behind the platform proxy), for token audit and partitioning.</summary>
+    public static string? GetClientIp(this HttpContext context) =>
+        context.Connection.RemoteIpAddress?.ToString();
 }

@@ -15,6 +15,7 @@ public class GestorGastosApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Jwt__Issuer", "GestorGastosTests");
         Environment.SetEnvironmentVariable("Jwt__Audience", "GestorGastosTests");
         Environment.SetEnvironmentVariable("Jwt__ExpiryMinutes", "60");
+        Environment.SetEnvironmentVariable("Totp__EncryptionKey", Convert.ToBase64String(new byte[32]));
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
