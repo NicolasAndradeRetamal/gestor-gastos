@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using FluentValidation;
 using GestorGastos.Api.Auth;
 using GestorGastos.Api.Middleware;
+using GestorGastos.Api.Recurring;
 using GestorGastos.Api.Validators;
 using GestorGastos.Infrastructure;
 using GestorGastos.Infrastructure.Persistence;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,23 @@ builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddScoped<SessionIssuer>();
+
+// Background scheduler that materializes recurring-expense templates hourly.
+// Skipped under the integration-test host (parallel test hosts would clash on
+// the shared scheduler); the generator logic is tested directly instead.
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddQuartz(q =>
+    {
+        var jobKey = new JobKey("recurring-expenses");
+        q.AddJob<RecurringExpenseJob>(opts => opts.WithIdentity(jobKey));
+        q.AddTrigger(t => t
+            .ForJob(jobKey)
+            .WithIdentity("recurring-expenses-trigger")
+            .WithCronSchedule("0 0 * * * ?"));
+    });
+    builder.Services.AddQuartzHostedService(opts => opts.WaitForJobsToComplete = true);
+}
 
 // The platform (Render) terminates TLS and forwards the real client IP in
 // X-Forwarded-For; trust it so rate limiting partitions by the actual client.
