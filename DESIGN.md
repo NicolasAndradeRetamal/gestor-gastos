@@ -350,6 +350,74 @@ sidebar de escritorio y grillas de 2 columnas), `lg` 1024px (grillas de
 dashboard a 3 columnas, ancho máximo de contenido). Ancho máximo de contenido:
 `max-w-6xl mx-auto` en el contenedor de página.
 
+### Movimiento
+
+El movimiento en esta app es funcional, no decorativo: confirma que una acción
+ocurrió, guía la atención hacia lo que aparece y suaviza los cambios de estado
+para que la interfaz no "salte". Una UI sin transiciones se percibe rota aunque
+funcione; una con animaciones largas se percibe lenta. El sistema se limita a
+dos duraciones y dos curvas, con las utilidades por defecto de Tailwind (sin
+extender la config).
+
+**Duraciones** (escala por defecto de Tailwind):
+
+| Token | Utilidad | Uso |
+|---|---|---|
+| Rápida | `duration-150` (150ms) | Cambios de estado *in situ*: hover y foco de color, sombra, borde, opacidad de un control ya presente. Es la duración por defecto de casi todo. |
+| Base | `duration-200` (200ms) | Entradas y salidas de overlays y elementos que aparecen/desaparecen: modal, dropdown, menú de usuario, toast. |
+| Lenta | `duration-300` (300ms) | Reservada para el llenado de la barra de presupuesto (`transition-[width]`, §3.12), donde el recorrido más largo comunica magnitud. No se usa para overlays. |
+
+**Curvas de easing** (utilidades por defecto):
+
+- `ease-out` — **entradas**: lo que aparece arranca rápido y desacelera al
+  asentarse (sensación de que "llega" y se posa). Es la curva por defecto de
+  toda aparición.
+- `ease-in` — **salidas**: lo que desaparece acelera al irse (sensación de que
+  "se va"). Es la curva por defecto de toda desaparición.
+- `ease-in-out` — solo para transiciones continuas de ida y vuelta de una misma
+  propiedad (p. ej. el ancho de la barra de presupuesto al recalcularse); no
+  para aparición/desaparición.
+
+**Qué se anima y qué no.** Solo se animan propiedades baratas para el
+compositor: `opacity`, `transform` (translate/scale), `color`,
+`background-color`, `border-color` y `box-shadow`. **Nunca** se anima `width`,
+`height`, `top`/`left` ni `margin` para aparecer/desaparecer (causan
+*reflow* y saltos) — la única excepción consciente es el `width` de la barra de
+presupuesto, que es una transición puntual y controlada, no una animación de
+layout. No hay animaciones decorativas, en bucle ni de rebote; nada de
+duraciones > 300ms; ningún elemento se mueve "porque sí". El movimiento
+siempre responde a una acción o a un cambio de datos.
+
+**Preferencia de movimiento reducido.** Todo movimiento respeta
+`prefers-reduced-motion`: los desplazamientos (`translate`) y escalados
+(`scale`) se anulan con `motion-reduce:transform-none` (o
+`motion-reduce:transition-none`) y la aparición queda solo en `opacity`, o
+directa. Los `animate-pulse`/`animate-spin` usan `motion-reduce:animate-none`.
+La regla es que **ningún contenido deja de aparecer o de ser accesible** con el
+movimiento reducido: solo se retira el desplazamiento, no la información.
+
+**Aplicación por componente** (el detalle vive en cada sección):
+
+- **Hovers y cambios de estado *in situ*** (botones, inputs, filas de nav,
+  filas de menú): `transition-colors duration-150` (más `transition-shadow`
+  donde la sombra cambia, p. ej. tarjeta interactiva §3.3). Ya es el patrón
+  base de §3.1–§3.7. El `active:scale-[0.98]` de los botones no necesita
+  `transition` propia (es un feedback instantáneo de presión).
+- **Modal** (§3.6): overlay con *fade* (`opacity` 0→100, `duration-200`); panel
+  con *fade* + leve *scale/translate* de entrada (`ease-out`) y de salida
+  (`ease-in`). Detalle completo en §3.6.
+- **Dropdowns / menús popover** (`UserMenu` §3.7, selects, menús contextuales):
+  *fade* + leve `translate-y` con el origen anclado al disparador
+  (`origin-top`), `duration-150`–`200`, `ease-out` al abrir / `ease-in` al
+  cerrar. Detalle en §3.7.
+- **Toasts** (§3.8): *slide* desde el borde + *fade*, con transición de lista
+  para el apilado. Detalle completo en §3.8.
+
+Para orquestar entrada y salida (montaje/desmontaje) se usa `<Transition>` /
+`<TransitionGroup>` de Vue, mapeando las clases `*-enter-*` / `*-leave-*` a las
+utilidades de arriba; los estados intermedios (`enter-from`, `leave-to`) fijan
+`opacity-0` y el `transform` de partida/llegada.
+
 ---
 
 ## 3. Componentes base
@@ -542,6 +610,18 @@ borrado. Un solo modal a la vez.
   `Cancelar` + botón primario o peligro según la acción, en ese orden
   (cancelar primero, para que la acción destructiva no quede donde el pulgar
   suele tocar por hábito).
+- **Movimiento** (tokens §2): el conjunto se monta/desmonta con `<Transition>`.
+  - *Overlay*: solo *fade*. Entrada `opacity-0 → opacity-100`,
+    `transition-opacity duration-200 ease-out`; salida a la inversa con
+    `ease-in`.
+  - *Panel*: *fade* + leve *scale/translate* de asentamiento. Entrada
+    `duration-200 ease-out` desde `opacity-0 scale-95` (en móvil, donde el
+    panel roza el borde inferior del área visible, `translate-y-2` en vez de
+    `scale`) hasta `opacity-100 scale-100 translate-y-0`; salida `duration-150
+    ease-in` de vuelta a `opacity-0 scale-95`. El escalado es sutil (95%→100%),
+    nunca un "zoom" marcado.
+  - `motion-reduce`: se anula `scale`/`translate` (`motion-reduce:transform-none`)
+    y el modal aparece solo con *fade*.
 - **Foco**: al abrir, foco al primer campo (o al título en confirmaciones);
   trampa de foco dentro del panel (`Tab`/`Shift+Tab` ciclan dentro); `Escape`
   cierra (salvo mientras se envía, `aria-busy`); al cerrar, el foco vuelve al
@@ -614,6 +694,17 @@ el lugar convencional de las acciones de cuenta. Popover
 Cada fila del menú mide `h-11` (44px) como objetivo táctil; los iconos de fila
 son `size-5` (20px) **con** texto visible, no icon-only.
 
+**Movimiento del popover** (tokens §2): el menú se monta/desmonta con
+`<Transition>` con *fade* + leve `translate-y` anclado al disparador. En móvil
+(avatar de la topbar, menú hacia abajo) el origen es `origin-top` y entra desde
+`opacity-0 -translate-y-1 scale-95`; en escritorio (avatar del pie del sidebar,
+menú hacia arriba) el origen es `origin-bottom` y entra desde `opacity-0
+translate-y-1 scale-95`. Entrada `duration-150 ease-out` hasta `opacity-100
+translate-y-0 scale-100`; salida `duration-150 ease-in` de vuelta al estado de
+partida. `motion-reduce:transform-none` deja solo el *fade*. El mismo patrón de
+*fade* + `translate-y` (origen `origin-top`, `duration-150`) aplica al desplegar
+un `select`/menú contextual.
+
 **Móvil (`< md`)** — barra inferior fija de navegación (los tres destinos
 principales) + topbar simple:
 
@@ -636,25 +727,103 @@ principales) + topbar simple:
 
 ### 3.8 Toasts / notificaciones
 
-Contenedor: `fixed top-4 inset-x-4 z-50 flex flex-col items-center gap-2
-sm:inset-x-auto sm:right-4 sm:items-end` (apiladas, la más nueva abajo,
-máximo 3 visibles). Cada toast:
+Notificación efímera y no bloqueante que confirma el resultado de una acción
+(`Gasto guardado`) o comunica un fallo (`No se pudo guardar el gasto`). Es la
+principal señal de que "algo pasó" tras una acción, así que debe **entrar y
+salir con movimiento**, **cerrarse sola** en todos sus tipos y mantener cada
+sub-elemento (icono, botón de cerrar) en proporción y color coherentes con la
+variante — jamás un control primario azul dentro de un toast rojo de error.
 
-`flex items-start gap-3 w-full sm:w-96 rounded-lg border p-4 shadow-raised`,
-con icono `size-5 shrink-0` (`aria-hidden`) + texto `text-sm text-ink flex-1` +
-botón cerrar icon-only opcional, tamaño por defecto de §3.1 (`size-11`, icono
-`size-6`; al ser una acción independiente y no una fila de tabla, no aplica
-la variante compacta). `role="status"` (éxito/info) o
-`role="alert"` (error/warning) para que el lector de pantalla lo anuncie sin
-esperar foco. Auto-descarta a los 5s (éxito/info) o permanece hasta que el
-usuario lo cierre (error).
+**Posición y stack.** Contenedor `role="region"` con `aria-label="Notificaciones"`:
+`fixed top-4 inset-x-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto
+sm:right-4 sm:items-end pointer-events-none`. En móvil ocupa el ancho centrado
+arriba; en `sm:` y superior se ancla arriba a la derecha. Se apilan con `gap-2`,
+**la más nueva arriba** (entra empujando a las anteriores hacia abajo), máximo
+**3 visibles** a la vez; una cuarta notificación entra cuando la más antigua se
+va. El contenedor es `pointer-events-none` para no bloquear clicks del fondo;
+cada toast reactiva `pointer-events-auto` sobre sí mismo.
 
-| Tipo | Clases de color | Icono |
-|---|---|---|
-| Éxito (`Gasto guardado`) | `bg-success-soft border-success/30 text-ink` | check en círculo, `text-success` |
-| Error (`No se pudo guardar el gasto`) | `bg-danger-soft border-danger/30 text-ink` | alerta en círculo, `text-danger` |
-| Aviso | `bg-warning-soft border-warning/30 text-ink` | triángulo de alerta, `text-warning` |
-| Info | `bg-info-soft border-info/30 text-ink` | "i" en círculo, `text-info` |
+**Anatomía de un toast.** Contenedor
+`pointer-events-auto flex items-start gap-3 w-full sm:w-96 rounded-lg border p-4
+shadow-raised overflow-hidden`, con color por variante (tabla abajo):
+
+1. **Icono de tipo** `size-5 shrink-0 mt-0.5` (`aria-hidden`), en el color
+   semántico de la variante (`text-success` / `text-danger` / `text-warning` /
+   `text-info`). El `mt-0.5` lo alinea con la primera línea del texto.
+2. **Mensaje** `text-sm text-ink flex-1 leading-snug`. Copy breve en español
+   (tuteo). Si hay título + descripción, título `font-semibold` sobre
+   descripción `text-ink-muted text-xs mt-0.5`.
+3. **Botón de cerrar** `<button>` armónico con el toast, **no** el botón
+   icon-only por defecto de §3.1 (un `size-11` en azul primario aquí
+   desentonaría). Es la excepción de tamaño para cierre de notificación:
+   - Área de toque accesible pero discreta: `size-8 shrink-0 -mr-1 -mt-1`
+     (32×32px; los márgenes negativos recuperan aire sin agrandar el toast) con
+     `inline-flex items-center justify-center rounded-md`.
+   - Icono `x` **`size-4`** (16px) centrado — pequeño y proporcionado al icono
+     de tipo `size-5`, nunca mayor que él.
+   - Color derivado de la variante, sin fondo primario: reposo
+     `text-ink-muted`, `hover:text-ink hover:bg-black/5` (usa
+     `light-dark`-neutral: en oscuro `hover:bg-white/10`), foco anillo global
+     (§2). El icono hereda el tono neutro del toast, no el color de acento.
+   - `aria-label="Cerrar notificación"`. Siempre presente en todos los tipos
+     (también en éxito/info): el auto-cierre no sustituye al control manual.
+
+| Tipo | Rol ARIA | Clases de contenedor | Icono de tipo |
+|---|---|---|---|
+| **Éxito** (`Gasto guardado`) | `role="status"` | `bg-success-soft border border-success/30` | `check-circle`, `text-success` |
+| **Info** (`Cambios sincronizados`) | `role="status"` | `bg-info-soft border border-info/30` | `info-circle`, `text-info` |
+| **Aviso** (`Revisa tu presupuesto de Comida`) | `role="alert"` | `bg-warning-soft border border-warning/30` | `alert-triangle`, `text-warning` |
+| **Error** (`No se pudo guardar el gasto`) | `role="alert"` | `bg-danger-soft border border-danger/30` | `alert-circle`, `text-danger` |
+
+El texto va siempre en `text-ink` (contraste alto sobre el fondo `-soft`); el
+color semántico se reserva al icono y al borde, de modo que el color nunca es
+el único indicador (icono de forma distinta + texto + rol ARIA acompañan).
+
+**Auto-cierre.** **Todos** los tipos se cierran solos, incluidos los errores.
+La duración depende del tipo, según cuánto tiempo necesita leerse el mensaje:
+
+| Tipo | Duración visible |
+|---|---|
+| Éxito / Info | **4500 ms** (~4,5 s) — confirmación breve, se lee de un vistazo |
+| Aviso / Error | **8000 ms** (~8 s) — más tiempo para leer qué falló y qué hacer |
+
+- **Pausa al interactuar.** El temporizador se **detiene** mientras el puntero
+  está encima (`mouseenter`) o mientras el foco de teclado está dentro del toast
+  (`focusin`, p. ej. al tabular hasta el botón cerrar), y se **reanuda** al salir
+  (`mouseleave` / `focusout`). Así nadie pierde un mensaje por leerlo despacio ni
+  queda atrapado el usuario de teclado. La implementación descuenta el tiempo ya
+  transcurrido (no reinicia a cero al reanudar).
+- **Barra de progreso del tiempo restante** (incluida): línea sutil al pie del
+  toast, `absolute bottom-0 left-0 h-0.5` en el color semántico de la variante a
+  baja opacidad (`bg-success/40`, `bg-danger/40`, …), cuyo ancho va de `100%` a
+  `0%` en la duración del tipo (`transition-[width] linear`). Se **congela** su
+  ancho actual al pausar y continúa al reanudar, de modo que refleja siempre el
+  tiempo real que queda. Es puramente informativa (`aria-hidden`); con
+  `motion-reduce` no se anima (se oculta o queda estática), y el auto-cierre
+  sigue rigiendo por temporizador igual.
+
+**Movimiento** (tokens §2). Cada toast se monta/desmonta con `<TransitionGroup>`
+(transición de lista) para animar también el reacomodo del stack:
+
+- *Entrada* (`ease-out`, `duration-200`): desde el borde donde vive el
+  contenedor. En `sm:` y superior (arriba a la derecha) desliza desde la derecha
+  + *fade*: `opacity-0 translate-x-4` → `opacity-100 translate-x-0`. En móvil
+  (arriba centrado) desliza desde arriba: `opacity-0 -translate-y-2` →
+  `opacity-100 translate-y-0`.
+- *Salida* (`ease-in`, `duration-150`): a la inversa de su entrada + *fade* a
+  `opacity-0`, con `absolute` durante el `leave` para que el hueco no colapse de
+  golpe.
+- *Reacomodo del stack* (`v-move`, `duration-200 ease-out`): al irse un toast,
+  los restantes se deslizan suavemente a su nueva posición en lugar de saltar.
+- `motion-reduce`: se anulan `translate` (`motion-reduce:transform-none`); la
+  entrada/salida queda solo en `opacity` (aparición/desaparición directa,
+  nunca deslizamiento).
+
+**Accesibilidad.** `role="status"` (éxito/info, cortesía — no interrumpe) o
+`role="alert"` (aviso/error, se anuncia de inmediato); el toast **no roba el
+foco** al aparecer (el usuario sigue en su tarea). El botón cerrar es alcanzable
+por teclado y la pausa por hover/focus garantiza que no se cierre mientras se
+interactúa con él. El copy es autoexplicativo y no depende del color.
 
 ### 3.9 Estados vacíos, error y carga
 
@@ -1373,6 +1542,11 @@ el mensaje del `400`. Carga (parseo o importación) → botón en estado de carg
   opciones de radiogroup del selector de color.
 - **Idioma**: `<html lang="es">`; mensajes de error de la API ya vienen en
   español y se muestran tal cual.
-- **Movimiento**: transiciones cortas (`duration-150`–`200`) en color/sombra;
-  skeletons con `animate-pulse motion-reduce:animate-none`; sin animaciones
-  de entrada/salida decorativas en listas o tarjetas.
+- **Movimiento** (sistema completo en §2, "Movimiento"): transiciones cortas
+  (`duration-150` para estados *in situ*, `duration-200` para entradas/salidas
+  de overlays y toasts) con `ease-out` al aparecer / `ease-in` al desaparecer;
+  el movimiento es funcional (confirma acciones y suaviza cambios), nunca
+  decorativo ni en bucle. Todo respeta `prefers-reduced-motion`: los
+  desplazamientos y escalados se anulan con `motion-reduce:transform-none` y la
+  aparición queda solo en `opacity` o directa, sin que ningún contenido deje de
+  mostrarse; skeletons y spinners con `motion-reduce:animate-none`.
