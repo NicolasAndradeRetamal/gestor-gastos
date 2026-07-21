@@ -7,9 +7,18 @@ export interface Toast {
   id: number
   type: ToastType
   message: string
+  duration: number
 }
 
-const AUTO_DISMISS_MS = 5000
+// Success/info are quick confirmations; warnings/errors need longer to read.
+const DURATIONS: Record<ToastType, number> = {
+  success: 4500,
+  info: 4500,
+  warning: 8000,
+  error: 8000,
+}
+
+const MAX_VISIBLE = 3
 let nextId = 0
 
 export const useToastStore = defineStore('toast', () => {
@@ -21,10 +30,7 @@ export const useToastStore = defineStore('toast', () => {
 
   function push(type: ToastType, message: string): number {
     const id = nextId++
-    toasts.value = [...toasts.value, { id, type, message }].slice(-3)
-    if (type === 'success' || type === 'info') {
-      setTimeout(() => dismiss(id), AUTO_DISMISS_MS)
-    }
+    toasts.value = [...toasts.value, { id, type, message, duration: DURATIONS[type] }].slice(-MAX_VISIBLE)
     return id
   }
 

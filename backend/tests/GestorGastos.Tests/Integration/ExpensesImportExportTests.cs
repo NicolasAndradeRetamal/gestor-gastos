@@ -95,6 +95,22 @@ public class ExpensesImportExportTests(PostgresContainerFixture postgres) : Inte
     }
 
     [Fact]
+    public async Task Export_StartsWithUtf8BomAndKeepsAccents()
+    {
+        var (client, _) = await CreateAuthenticatedClientAsync();
+        var category = await (await client.PostAsJsonAsync("/api/categories", new CategoryUpsertRequest("Educación", "#F97316", null)))
+            .Content.ReadFromJsonAsync<CategoryDto>();
+        (await client.PostAsJsonAsync("/api/expenses", new ExpenseUpsertRequest(10.00m, PastDate, "Curso", category!.Id)))
+            .EnsureSuccessStatusCode();
+
+        var bytes = await (await client.GetAsync("/api/expenses/export")).Content.ReadAsByteArrayAsync();
+
+        // UTF-8 BOM so Excel on Windows shows accents correctly.
+        bytes.Take(3).Should().Equal([(byte)0xEF, (byte)0xBB, (byte)0xBF]);
+        Encoding.UTF8.GetString(bytes).Should().Contain("Educación");
+    }
+
+    [Fact]
     public async Task ExportedCsv_CanBeReimported()
     {
         var (client, _) = await CreateAuthenticatedClientAsync();

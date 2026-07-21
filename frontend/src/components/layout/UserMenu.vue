@@ -31,17 +31,23 @@
       {{ initials }}
     </button>
 
-    <div
-      v-if="isOpen"
-      :id="menuId"
-      ref="menuRef"
-      role="menu"
-      :aria-label="`Menú de ${displayName}`"
-      class="absolute z-20 w-56 rounded-md border border-line bg-surface-raised p-1 shadow-raised"
-      :class="variant === 'sidebar' ? 'bottom-full left-3 mb-2' : 'right-0 top-full mt-2'"
-      @keydown.esc="closeMenu"
-      @keydown.tab="onTab"
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      :enter-from-class="menuFromClass"
+      leave-active-class="transition duration-150 ease-in"
+      :leave-to-class="menuFromClass"
     >
+      <div
+        v-if="isOpen"
+        :id="menuId"
+        ref="menuRef"
+        role="menu"
+        :aria-label="`Menú de ${displayName}`"
+        class="absolute z-20 w-56 rounded-md border border-line bg-surface-raised p-1 shadow-raised"
+        :class="variant === 'sidebar' ? 'bottom-full left-3 mb-2 origin-bottom' : 'right-0 top-full mt-2 origin-top'"
+        @keydown.esc="closeMenu"
+        @keydown.tab="onTab"
+      >
       <div class="px-3 py-2" role="presentation">
         <p class="truncate text-sm font-medium text-ink">{{ displayName }}</p>
         <p v-if="email" class="truncate text-xs text-ink-muted">{{ email }}</p>
@@ -68,7 +74,8 @@
         <AppIcon name="logout" class="size-5" />
         Cerrar sesión
       </button>
-    </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -102,6 +109,13 @@ const { panelRef: menuRef, activate, deactivate } = useFocusTrap()
 const isOpen = ref(false)
 
 const initials = computed(() => getInitials(props.displayName))
+
+// The popover animates from the edge it's anchored to (up for sidebar, down for topbar).
+const menuFromClass = computed(() =>
+  props.variant === 'sidebar'
+    ? 'opacity-0 translate-y-1 scale-95 motion-reduce:transform-none'
+    : 'opacity-0 -translate-y-1 scale-95 motion-reduce:transform-none',
+)
 
 useClickOutside(rootRef, () => {
   if (isOpen.value) closeMenu()

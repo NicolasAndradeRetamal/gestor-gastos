@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
 
@@ -49,7 +50,8 @@ public static class ExpenseCsv
     public static byte[] Write(IEnumerable<ExpenseCsvExport> records)
     {
         using var memory = new MemoryStream();
-        using (var writer = new StreamWriter(memory, leaveOpen: true))
+        // Emit a UTF-8 BOM so Excel on Windows renders accented characters correctly.
+        using (var writer = new StreamWriter(memory, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true), leaveOpen: true))
         using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
         {
             csv.WriteField("fecha");

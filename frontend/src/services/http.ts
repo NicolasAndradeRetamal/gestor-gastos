@@ -22,6 +22,9 @@ const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/au
 // this module and router/index.ts.
 let onUnauthorized: (() => void) | null = null
 
+// Guards against a burst of concurrent 401s triggering multiple redirects/toasts.
+let signedOut = false
+
 export function setUnauthorizedHandler(handler: () => void): void {
   onUnauthorized = handler
 }
@@ -29,6 +32,8 @@ export function setUnauthorizedHandler(handler: () => void): void {
 export function setStoredTokens(accessToken: string, refreshToken: string): void {
   localStorage.setItem(AUTH_TOKEN_KEY, accessToken)
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  // A fresh session re-arms the forced sign-out guard.
+  signedOut = false
 }
 
 export function clearStoredTokens(): void {
@@ -62,6 +67,8 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 function forceSignOut(): void {
+  if (signedOut) return
+  signedOut = true
   clearStoredTokens()
   onUnauthorized?.()
 }
