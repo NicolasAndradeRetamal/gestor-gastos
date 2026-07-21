@@ -1241,6 +1241,47 @@ enlace `Gestionar presupuestos` a `/budgets`. Si no hay presupuestos, la secció
 no aparece. Los datos salen de `GET /api/budgets`, con carga independiente del
 `summary`.
 
+### 4.10 Gastos recurrentes (`/recurring`)
+
+Propósito: gestionar plantillas de gastos fijos (suscripciones, alquiler…) que se
+registran automáticamente cada mes. **No** ocupa un lugar en la navegación
+principal (la tab bar se mantiene en cuatro destinos): se accede desde un botón
+secundario `Gastos recurrentes` en la cabecera de la vista de Gastos (§4.4),
+junto a `Añadir gasto`. Ruta protegida `/recurring`; usa el layout general
+(§4.1).
+
+Layout: `H1` `Gastos recurrentes` + botón primario `+ Nueva plantilla` a la
+derecha en `md:`. Texto introductorio `text-sm text-ink-muted`: `Estas plantillas
+se registran como un gasto automáticamente en su día del mes.`
+
+Cuerpo:
+
+1. **Lista** de plantillas, una tarjeta (§3.3) por plantilla en grilla
+   `grid gap-3 sm:grid-cols-2`. Cada tarjeta:
+   - Fila superior: `CategoryBadge` `sm` + importe (`tabular-nums font-semibold`).
+   - `text-sm text-ink`: la nota (si la hay).
+   - `text-xs text-ink-muted`: `Día {n} de cada mes · Próximo: {fecha}` (fecha
+     `nextRunOn`, formato `dd mmm`).
+   - Acciones a la derecha: botones fantasma icon-only `Editar`/`Eliminar`
+     compactos (§3.4).
+2. **Estado vacío** (§3.9), icono `expenses`, texto `Todavía no tienes gastos
+   recurrentes. Crea una plantilla para tus gastos fijos y suscripciones.` +
+   botón `Nueva plantilla`.
+3. **Carga**: skeleton de 3 tarjetas (`h-28`). **Error** (§3.9) con `Reintentar`.
+
+**Alta/edición** — modal (§3.6), formulario `RecurringExpenseForm` `space-y-4`:
+
+- `Categoría` (select, §3.2, globales + propias, con punto de color).
+- `Monto` (número, `inputmode="decimal"`, placeholder `0.00`).
+- `Día del mes` (select 1–31), ayuda `Si el mes no llega a ese día, se registra el
+  último día del mes.`
+- `Nota` (textarea opcional, ≤500).
+- Pie: `Cancelar` + `Guardar plantilla` / `Guardar cambios`.
+- Errores de validación (`400`) mapeados campo a campo (§3.2).
+
+**Borrado**: modal de confirmación (§3.6) `¿Eliminar esta plantilla? Los gastos
+que ya generó no se ven afectados.` + botón peligro `Eliminar`.
+
 ---
 
 ## 5. Accesibilidad

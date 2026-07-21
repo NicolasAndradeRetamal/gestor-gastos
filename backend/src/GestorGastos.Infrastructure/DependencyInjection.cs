@@ -1,5 +1,6 @@
 using GestorGastos.Infrastructure.Auth;
 using GestorGastos.Infrastructure.Persistence;
+using GestorGastos.Infrastructure.Recurring;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<ITotpSecretProtector, AesGcmTotpSecretProtector>();
         services.AddSingleton<IRecoveryCodeService, RecoveryCodeService>();
+        services.AddScoped<IRecurringExpenseGenerator, RecurringExpenseGenerator>();
 
         return services;
     }
