@@ -1,4 +1,5 @@
 using FluentValidation;
+using GestorGastos.Api.Csv;
 using GestorGastos.Domain.Common;
 using Microsoft.AspNetCore.Diagnostics;
 
@@ -18,6 +19,11 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
                 await ProblemDetailsWriter.WriteAsync(
                     httpContext, StatusCodes.Status400BadRequest, "Validation failed",
                     "One or more fields are invalid.", errors, cancellationToken);
+                return true;
+
+            case CsvFormatException csvFormat:
+                await ProblemDetailsWriter.WriteAsync(
+                    httpContext, StatusCodes.Status400BadRequest, "Bad Request", csvFormat.Message, cancellationToken: cancellationToken);
                 return true;
 
             case NotFoundException notFound:

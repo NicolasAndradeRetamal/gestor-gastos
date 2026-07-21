@@ -1258,3 +1258,78 @@ El gasto generado es un gasto normal, editable y borrable como cualquier otro; n
 necesita comportarse distinto. Evita una FK y su gestión al borrar plantillas.
 *Descartado (documentado):* enlazar el gasto a su plantilla para trazabilidad;
 se podría añadir después de forma aditiva si se quisiera mostrar el origen.
+
+## 15. Import/Export CSV (v2)
+
+Permite **exportar** los gastos filtrados a CSV e **importar** gastos desde un
+CSV, con validación y previsualización antes de confirmar. No requiere cambios de
+esquema (no hay migración).
+
+### 15.1 Formato CSV
+
+Cabecera y columnas (en este orden): `fecha,categoria,monto,nota`.
+
+- `fecha`: `AAAA-MM-DD`. No puede ser posterior a hoy.
+- `categoria`: nombre de una categoría accesible (global o propia del usuario),
+  sin distinguir mayúsculas/minúsculas.
+- `monto`: decimal `> 0`, máximo 2 decimales. Se acepta punto o coma como
+  separador decimal; la exportación siempre usa punto (para reimportar sin
+  pérdidas).
+- `nota`: opcional, ≤ 500 caracteres (los campos se entrecomillan si contienen
+  comas o saltos de línea, según RFC 4180; se usa una librería CSV robusta).
+
+### 15.2 Exportación
+
+`GET /api/expenses/export?from=&to=&categoryId=` — devuelve un `text/csv`
+(descarga) con **todos** los gastos del usuario que cumplen los filtros (sin
+paginar), ordenados por fecha descendente. La categoría se exporta por nombre.
+Los filtros son los mismos que los de `GET /api/expenses`.
+
+### 15.3 Importación en dos pasos
+
+Para no escribir nada hasta que el usuario confirme:
+
+1. **Previsualización** — `POST /api/expenses/import/preview`
+   (`multipart/form-data`, campo `file`). Parsea el CSV y valida cada fila **sin
+   tocar la base de datos**. Responde:
+   ```json
+   {
+     "rows": [
+       { "rowNumber": 2, "spentAt": "2026-07-01", "categoryName": "Comida",
+         "categoryId": "uuid", "amount": 42.50, "note": "Almuerzo",
+         "valid": true, "errors": [] },
+       { "rowNumber": 3, "spentAt": null, "categoryName": "Inexistente",
+         "categoryId": null, "amount": -5, "note": null, "valid": false,
+         "errors": ["La categoría no existe.", "El monto debe ser mayor que 0."] }
+     ],
+     "validCount": 1,
+     "invalidCount": 1
+   }
+   ```
+   Errores globales: `400` si el archivo no es CSV, está vacío, le faltan columnas
+   o supera el límite de filas (1000).
+
+2. **Confirmación** — `POST /api/expenses/import`. Body con **solo las filas
+   válidas** que el cliente confirma:
+   ```json
+   { "rows": [ { "spentAt": "2026-07-01", "categoryId": "uuid", "amount": 42.50, "note": "Almuerzo" } ] }
+   ```
+   El servidor **revalida** cada fila (categoría accesible, monto y fecha
+   válidos) antes de insertar; ignora las que no pasen. Responde
+   `200 { "imported": 1 }`. La revalidación evita confiar en datos manipulados por
+   el cliente.
+
+### 15.4 Decisiones
+
+**Importación en dos pasos (previsualizar → confirmar) (elegida) vs importación
+directa.**
+Previsualizar deja al usuario ver qué se importará y qué filas fallan (y por qué)
+antes de escribir nada, evitando importaciones a medias o sorpresas.
+*Descartado:* insertar directamente y devolver un informe (menos control para el
+usuario). El servidor revalida en la confirmación para no depender de la
+previsualización del cliente.
+
+**Categoría por nombre en el CSV (elegida) vs por id.**
+Un CSV editado a mano o exportado desde otra herramienta usa nombres legibles, no
+uuids. Se resuelven contra las categorías del usuario en la previsualización.
+*Descartado:* exigir el `id` (poco práctico para un archivo hecho a mano).
