@@ -44,6 +44,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Presupuestos' },
     },
     {
+      path: '/recurring',
+      name: 'recurring',
+      component: () => import('@/views/RecurringExpensesView.vue'),
+      meta: { requiresAuth: true, title: 'Gastos recurrentes' },
+    },
+    {
       path: '/categories',
       name: 'categories',
       component: () => import('@/views/CategoriesView.vue'),

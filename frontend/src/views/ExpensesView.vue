@@ -2,7 +2,12 @@
   <div class="space-y-6">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <h1 class="text-2xl font-bold tracking-tight text-ink">Gastos</h1>
-      <BaseButton class="w-full md:w-auto" icon="plus" @click="openCreateModal">Añadir gasto</BaseButton>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <BaseButton variant="secondary" class="w-full sm:w-auto" @click="router.push({ name: 'recurring' })">
+          Gastos recurrentes
+        </BaseButton>
+        <BaseButton class="w-full sm:w-auto" icon="plus" @click="openCreateModal">Añadir gasto</BaseButton>
+      </div>
     </div>
 
     <ExpenseFilters v-model="filterValue" :categories="categoriesStore.items" />
