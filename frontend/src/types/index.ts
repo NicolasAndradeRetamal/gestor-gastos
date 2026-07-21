@@ -1,5 +1,6 @@
 export * from './api'
 export * from './auth'
+export * from './budget'
 export * from './category'
 export * from './dashboard'
 export * from './expense'

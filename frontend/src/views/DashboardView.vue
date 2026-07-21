@@ -27,6 +27,16 @@
     <template v-else-if="dashboardStore.summary">
       <TotalCard :total="dashboardStore.summary.total" />
 
+      <BaseCard v-if="budgetsStore.items.length > 0">
+        <template #header>
+          <h2 class="text-lg font-semibold text-ink">Presupuestos del mes</h2>
+          <RouterLink :to="{ name: 'budgets' }" class="text-sm font-semibold text-primary">Gestionar presupuestos</RouterLink>
+        </template>
+        <div class="space-y-4">
+          <BudgetProgress v-for="budget in budgetsStore.items" :key="budget.id" :budget="budget" />
+        </div>
+      </BaseCard>
+
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <BaseCard>
           <template #header>
@@ -53,6 +63,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import BaseCard from '@/components/base/BaseCard.vue'
+import BudgetProgress from '@/components/base/BudgetProgress.vue'
 import EmptyState from '@/components/base/EmptyState.vue'
 import ErrorState from '@/components/base/ErrorState.vue'
 import Skeleton from '@/components/base/Skeleton.vue'
@@ -61,10 +72,12 @@ import DateRangeSelector from '@/components/dashboard/DateRangeSelector.vue'
 import MonthChart from '@/components/dashboard/MonthChart.vue'
 import TotalCard from '@/components/dashboard/TotalCard.vue'
 import { getPresetRange, type DateRangePreset } from '@/composables/useDateRangePresets'
+import { useBudgetsStore } from '@/stores/budgets'
 import { useDashboardStore } from '@/stores/dashboard'
 
 const router = useRouter()
 const dashboardStore = useDashboardStore()
+const budgetsStore = useBudgetsStore()
 const preset = ref<DateRangePreset>('all')
 
 const isEmpty = computed(
@@ -77,5 +90,9 @@ function load(): void {
 }
 
 watch(preset, load)
-onMounted(load)
+onMounted(() => {
+  load()
+  // Budgets track the current month, independent of the dashboard date range.
+  budgetsStore.fetchAll()
+})
 </script>
