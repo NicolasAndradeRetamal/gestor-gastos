@@ -731,6 +731,39 @@ depender solo del icono.
 - El estado nunca depende únicamente del color: el icono cambia de forma
   (sol ↔ luna) y el `aria-label`/texto visible cambian junto con él.
 
+### 3.11 Barra de progreso de presupuesto (`BudgetProgress`)
+
+Muestra el gasto del mes en curso frente al límite de una categoría, con un
+estado visual que nunca depende solo del color. Se usa en el Dashboard (§4.3) y
+en la vista de presupuestos (§4.7).
+
+Anatomía (de arriba a abajo), dentro de una fila o tarjeta:
+
+1. **Cabecera** `flex items-center justify-between gap-2`: a la izquierda un
+   `CategoryBadge` `sm` (punto de color + nombre); a la derecha el importe en
+   `tabular-nums text-sm`: `{gastado} / {límite}` (`text-ink` el gastado,
+   `text-ink-muted` el límite).
+2. **Riel** `mt-2 h-2.5 w-full rounded-full bg-surface-sunken overflow-hidden`
+   con una **barra interior** `h-full rounded-full transition-[width]
+   duration-300` cuyo ancho es `min(porcentaje, 100)%` y cuyo color depende del
+   estado:
+   - `ok` (< 80%): `bg-success`.
+   - `warning` (80–100%): `bg-warning`.
+   - `exceeded` (> 100%): `bg-danger`, y el riel completo se pinta
+     `bg-danger-soft` para reforzar el desborde.
+3. **Pie** `mt-1 flex items-center gap-1 text-xs`: icono + texto de estado (el
+   color acompaña, no sustituye, al texto):
+   - `ok`: sin icono, `text-ink-muted`, texto `{porcentaje}% usado`.
+   - `warning`: icono `alert-triangle` `size-3.5 text-warning`, texto
+     `text-warning font-medium` `Te estás acercando al límite ({porcentaje}%)`.
+   - `exceeded`: icono `alert-circle` `size-3.5 text-danger`, texto
+     `text-danger font-medium` `Límite superado ({porcentaje}%)`.
+
+Accesibilidad: el riel lleva `role="progressbar"` con `aria-valuenow`
+(porcentaje, sin recortar), `aria-valuemin="0"`, `aria-valuemax="100"` y
+`aria-label` `Presupuesto de {categoría}`. El estado se comunica además por
+texto (pie) e icono, nunca solo por color.
+
 ---
 
 ## 4. Layout y vistas
@@ -922,6 +955,57 @@ vista dedicada `/categories` (§4.5) en vez de forzarlo dentro del formulario
 de gasto. Se señala aquí para que arquitectura confirme o ajuste la lista de
 rutas/vistas si se prefiere otro enfoque (p. ej. un panel dentro de
 `Configuración` en una fase posterior).
+
+### 4.7 Presupuestos (`/budgets`)
+
+Propósito: fijar un límite mensual de gasto por categoría y seguir el progreso
+del mes en curso. Ruta protegida `/budgets`, cuarto destino de la navegación
+principal (§3.7: sidebar en escritorio, tab bar en móvil), con icono `wallet` (o
+`target`) y etiqueta `Presupuestos`.
+
+Layout (§4.1): `H1` `Presupuestos` + botón primario `+ Crear presupuesto` a la
+derecha en `md:` (ancho completo bajo el título en móvil), seguido de
+`space-y-6`.
+
+Cuerpo:
+
+1. **Lista de presupuestos**, una tarjeta (§3.3) por presupuesto, `space-y-3` o
+   grilla `grid gap-3 sm:grid-cols-2`. Cada tarjeta contiene un `BudgetProgress`
+   (§3.11) y, alineados a la derecha de la cabecera o en un pie, botones fantasma
+   icon-only `Editar` (`edit`) y `Eliminar` (`trash`) compactos (mismo patrón que
+   la tabla de gastos, §3.4).
+2. **Estado vacío** (§3.9) cuando el usuario no tiene presupuestos: icono
+   `wallet`, texto `Todavía no tienes presupuestos. Crea uno para controlar tu
+   gasto mensual por categoría.` + botón `Crear presupuesto`.
+3. **Carga**: skeleton de 3 tarjetas (`h-24`). **Error de vista** (§3.9) con
+   `Reintentar`.
+
+**Alta/edición** — modal (§3.6), formulario `BudgetForm` `space-y-4`:
+
+- `Categoría` (select, §3.2): en **alta**, lista de categorías del usuario
+  (globales + propias) que **aún no tienen** presupuesto (cada opción con el punto
+  de color, §3.5); en **edición**, la categoría se muestra fija (deshabilitada),
+  porque la categoría es la identidad del presupuesto.
+- `Límite mensual` (número, `inputmode="decimal"`, placeholder `0.00`, prefijo de
+  moneda no necesario al ser moneda única), ayuda `El importe máximo que quieres
+  gastar en esta categoría cada mes.`
+- Pie: `Cancelar` + `Guardar presupuesto` / `Guardar cambios` (primario, estado
+  de carga mientras `POST`/`PUT`).
+- Error `409` (ya existe presupuesto para la categoría): error de campo en
+  `Categoría` (`Ya tienes un presupuesto para esta categoría.`). Error `400`
+  (importe inválido): error de campo en `Límite mensual`.
+
+**Borrado**: modal de confirmación estándar (§3.6) `¿Eliminar este presupuesto?
+El gasto registrado no se ve afectado.` + botón peligro `Eliminar`.
+
+**Sección en el Dashboard (§4.3).** Cuando el usuario tiene al menos un
+presupuesto, el Dashboard muestra, bajo la tarjeta de total, una tarjeta
+`Presupuestos del mes` con hasta los presupuestos ordenados por porcentaje
+descendente (los más ajustados primero), cada uno como un `BudgetProgress`
+(§3.11), y un enlace `Gestionar presupuestos` a `/budgets`. Si no hay
+presupuestos, la sección no aparece (no añade ruido a quien no los usa). Los
+datos salen de `GET /api/budgets`; su carga es independiente del
+`summary` y muestra su propio skeleton (`h-24`).
 
 ---
 
