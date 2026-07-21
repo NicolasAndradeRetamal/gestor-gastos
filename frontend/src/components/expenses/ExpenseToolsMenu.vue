@@ -10,25 +10,32 @@
     >
       Más
     </BaseButton>
-    <div
-      v-if="open"
-      role="menu"
-      class="absolute right-0 top-full z-20 mt-2 w-56 rounded-md border border-line bg-surface-raised p-1 shadow-raised"
-      @keydown.esc="close"
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="opacity-0 -translate-y-1 scale-95 motion-reduce:transform-none"
+      leave-active-class="transition duration-150 ease-in"
+      leave-to-class="opacity-0 -translate-y-1 scale-95 motion-reduce:transform-none"
     >
-      <button type="button" role="menuitem" :class="rowClass" @click="select('recurring')">
-        <AppIcon name="expenses" class="size-5" />
-        Gastos recurrentes
-      </button>
-      <button type="button" role="menuitem" :class="rowClass" @click="select('import')">
-        <AppIcon name="upload" class="size-5" />
-        Importar CSV
-      </button>
-      <button type="button" role="menuitem" :class="rowClass" @click="select('export')">
-        <AppIcon name="download" class="size-5" />
-        Exportar CSV
-      </button>
-    </div>
+      <div
+        v-if="open"
+        role="menu"
+        class="absolute right-0 top-full z-20 mt-2 w-56 origin-top rounded-md border border-line bg-surface-raised p-1 shadow-raised"
+        @keydown.esc="close"
+      >
+        <button type="button" role="menuitem" :class="rowClass" @click="select('recurring')">
+          <AppIcon name="expenses" class="size-5" />
+          Gastos recurrentes
+        </button>
+        <button type="button" role="menuitem" :class="rowClass" @click="select('import')">
+          <AppIcon name="upload" class="size-5" />
+          Importar CSV
+        </button>
+        <button type="button" role="menuitem" :class="rowClass" @click="select('export')">
+          <AppIcon name="download" class="size-5" />
+          Exportar CSV
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
