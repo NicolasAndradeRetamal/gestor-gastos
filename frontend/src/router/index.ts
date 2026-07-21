@@ -50,6 +50,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Gastos recurrentes' },
     },
     {
+      path: '/import',
+      name: 'import',
+      component: () => import('@/views/ImportView.vue'),
+      meta: { requiresAuth: true, title: 'Importar gastos' },
+    },
+    {
       path: '/categories',
       name: 'categories',
       component: () => import('@/views/CategoriesView.vue'),

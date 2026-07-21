@@ -39,6 +39,7 @@ export type IconName =
   | 'shield'
   | 'copy'
   | 'download'
+  | 'upload'
 
 const props = defineProps<{
   name: IconName
@@ -94,6 +95,7 @@ const PATHS: Record<IconName, string[]> = {
     'M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
   ],
   download: ['M12 3v12', 'm7 12 5 5 5-5', 'M5 21h14'],
+  upload: ['M12 21V9', 'm7 14 5-5 5 5', 'M5 4h14'],
 }
 
 const CIRCLE_RADIUS: Partial<Record<IconName, number>> = {

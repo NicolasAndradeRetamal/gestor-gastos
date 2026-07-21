@@ -3,9 +3,7 @@
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <h1 class="text-2xl font-bold tracking-tight text-ink">Gastos</h1>
       <div class="flex flex-col gap-2 sm:flex-row">
-        <BaseButton variant="secondary" class="w-full sm:w-auto" @click="router.push({ name: 'recurring' })">
-          Gastos recurrentes
-        </BaseButton>
+        <ExpenseToolsMenu @select="onToolSelect" />
         <BaseButton class="w-full sm:w-auto" icon="plus" @click="openCreateModal">Añadir gasto</BaseButton>
       </div>
     </div>
@@ -59,6 +57,8 @@ import ErrorState from '@/components/base/ErrorState.vue'
 import ExpenseFilters, { type ExpenseFilterValue } from '@/components/expenses/ExpenseFilters.vue'
 import ExpenseForm from '@/components/expenses/ExpenseForm.vue'
 import ExpenseList from '@/components/expenses/ExpenseList.vue'
+import ExpenseToolsMenu from '@/components/expenses/ExpenseToolsMenu.vue'
+import { importExportService } from '@/services/importExport.service'
 import { useCategoriesStore } from '@/stores/categories'
 import { useExpensesStore } from '@/stores/expenses'
 import { useToastStore } from '@/stores/toast'
@@ -86,6 +86,34 @@ const formError = ref<ProblemDetails | null>(null)
 const isDeleteDialogOpen = ref(false)
 const isDeleting = ref(false)
 const expenseToDelete = ref<Expense | null>(null)
+
+function onToolSelect(action: 'recurring' | 'import' | 'export'): void {
+  if (action === 'recurring') router.push({ name: 'recurring' })
+  else if (action === 'import') router.push({ name: 'import' })
+  else void exportCsv()
+}
+
+async function exportCsv(): Promise<void> {
+  try {
+    const blob = await importExportService.exportCsv({
+      from: filterValue.value.from || undefined,
+      to: filterValue.value.to || undefined,
+      categoryId: filterValue.value.categoryId || undefined,
+    })
+    if (blob.size === 0) {
+      toastStore.info('No hay gastos para exportar con los filtros actuales.')
+      return
+    }
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'gastos.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    toastStore.error('No se pudo exportar. Inténtalo de nuevo.')
+  }
+}
 
 function syncRouteAndFetch(): void {
   expensesStore.setFilters({
