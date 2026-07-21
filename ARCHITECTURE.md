@@ -627,3 +627,96 @@ obligatorio); razonable si el proyecto endureciera seguridad.
   planificados, habría que relajar esa validación.
 - **Moneda única:** el MVP asume una sola moneda implícita (sin campo
   `currency`). Multi-moneda quedaría fuera de alcance.
+
+## 12. Presupuestos con alertas (v2)
+
+Permite al usuario fijar un **límite mensual de gasto por categoría** y ver, en
+el panel, cuánto lleva gastado en el mes en curso frente a ese límite, con
+estados visuales al acercarse (80%) y al superarlo.
+
+### 12.1 Modelo
+
+Un presupuesto es un **límite mensual recurrente** asociado a una categoría (una
+predefinida global o una propia del usuario). No se guarda un presupuesto por
+cada mes: hay **un presupuesto por categoría** y el progreso se calcula contra el
+gasto del **mes calendario en curso** (primer al último día del mes, según la
+fecha del servidor en UTC). Cambiar el importe afecta al mes actual y a los
+siguientes; el histórico de gasto no se altera.
+
+**Tabla `budgets`** (migración aditiva; no toca datos existentes):
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| id | uuid | PK, default `gen_random_uuid()` |
+| user_id | uuid | FK → `users(id)`, NOT NULL, `ON DELETE RESTRICT` |
+| category_id | uuid | FK → `categories(id)`, NOT NULL, `ON DELETE RESTRICT` |
+| amount | numeric(12,2) | NOT NULL, CHECK `amount > 0` (límite mensual) |
+| created_at | timestamptz | NOT NULL, default `now()` |
+| updated_at | timestamptz | NOT NULL, default `now()` |
+| active | boolean | NOT NULL, default `true` |
+
+- Índice único parcial sobre `(user_id, category_id)` donde `active = true`:
+  **un solo presupuesto activo por categoría y usuario**.
+- Índice `(user_id)` para listar los presupuestos del usuario.
+
+### 12.2 Cálculo del estado
+
+Para cada presupuesto se calcula el gasto del usuario en esa categoría dentro del
+mes en curso (`spent`), el porcentaje `spent / amount` y un estado derivado:
+
+| Estado | Condición |
+|---|---|
+| `ok` | `spent < 80%` del límite |
+| `warning` | `80% <= spent <= 100%` |
+| `exceeded` | `spent > 100%` |
+
+El porcentaje se reporta sin recortar (puede superar 100) para que el cliente
+muestre el exceso; la barra de progreso lo satura visualmente en 100%.
+
+### 12.3 Endpoints
+
+Todos requieren autenticación y operan solo sobre los recursos del usuario.
+
+| Método | Ruta | Request | Response OK | Errores |
+|---|---|---|---|---|
+| GET | /api/budgets | — | `200` `BudgetDto[]` (con `spent`, `percentage`, `status` del mes en curso) | `401` |
+| POST | /api/budgets | `{ categoryId, amount }` | `201` `BudgetDto` | `400`, `404` (categoría inaccesible), `409` (ya existe presupuesto para la categoría), `401` |
+| PUT | /api/budgets/{id} | `{ amount }` | `200` `BudgetDto` | `400`, `404`, `401` |
+| DELETE | /api/budgets/{id} | — | `204` | `404`, `401` |
+
+`BudgetDto`:
+```json
+{
+  "id": "uuid",
+  "categoryId": "uuid",
+  "categoryName": "Comida",
+  "color": "#F97316",
+  "amount": 500.00,
+  "spent": 410.00,
+  "percentage": 82,
+  "status": "warning"
+}
+```
+
+- **POST**: `categoryId` debe ser una categoría global o propia del usuario
+  (`404` si no). `amount > 0`. `409` si ya hay un presupuesto activo para esa
+  categoría (uno por categoría).
+- **PUT**: solo cambia el `amount` (la categoría es la identidad del
+  presupuesto). `404` si el presupuesto no existe o no es del usuario.
+- **DELETE**: borrado lógico (`active = false`).
+
+### 12.4 Integración con el panel
+
+El panel (`GET /api/dashboard/summary`) no cambia; los presupuestos se consumen
+desde `GET /api/budgets`, que ya incluye el gasto del mes y el estado. El cliente
+dibuja las barras de progreso en el Dashboard y ofrece una vista de gestión
+propia para crear, editar y borrar presupuestos.
+
+**Decisión — un presupuesto recurrente por categoría (elegida) vs un presupuesto
+por categoría y mes.**
+Un límite mensual recurrente cubre el caso de uso principal ("no gastar más de X
+al mes en comida") sin obligar al usuario a recrear presupuestos cada mes ni
+llenar la tabla de filas por período. *Descartado:* una fila por
+categoría-mes (más gestión para el usuario y más datos, sin beneficio claro en el
+alcance). Si en el futuro se quisiera histórico de límites, se añadiría un período
+sin romper el modelo actual.
