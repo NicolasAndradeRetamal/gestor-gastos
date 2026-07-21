@@ -1161,3 +1161,100 @@ llenar la tabla de filas por período. *Descartado:* una fila por
 categoría-mes (más gestión para el usuario y más datos, sin beneficio claro en el
 alcance). Si en el futuro se quisiera histórico de límites, se añadiría un período
 sin romper el modelo actual.
+
+## 14. Gastos recurrentes (v2)
+
+Permite registrar **plantillas de gastos fijos** (suscripciones, alquiler, etc.)
+que se materializan automáticamente como un gasto normal en su día del mes,
+gracias a un planificador en segundo plano. El usuario gestiona las plantillas
+(alta, edición, borrado); los gastos generados son gastos corrientes,
+indistinguibles del resto una vez creados.
+
+### 14.1 Modelo
+
+**Tabla `recurring_expenses`** (migración aditiva; no toca datos existentes):
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| id | uuid | PK, default `gen_random_uuid()` |
+| user_id | uuid | FK → `users(id)`, NOT NULL, `ON DELETE RESTRICT` |
+| category_id | uuid | FK → `categories(id)`, NOT NULL, `ON DELETE RESTRICT` |
+| amount | numeric(12,2) | NOT NULL, CHECK `amount > 0` |
+| day_of_month | int | NOT NULL, CHECK entre 1 y 31 |
+| note | varchar(500) | NULL |
+| last_run_on | date | NULL (última fecha en que generó un gasto) |
+| created_at / updated_at / active | | auditoría estándar |
+
+- `day_of_month` puede ser 1–31; si el mes tiene menos días, se **recorta** al
+  último día del mes (p. ej. 31 en febrero → día 28/29).
+- `last_run_on` evita duplicados: una plantilla genera **como máximo un gasto por
+  mes**.
+- Índice `(user_id)`. No hay enlace desde `expenses`: el gasto generado es un
+  gasto normal (decisión en 14.4).
+
+### 14.2 Planificador y generación
+
+Un **job de Quartz.NET** en segundo plano (hosted service en el mismo proceso de
+la API) se ejecuta periódicamente (cada hora) y llama a un generador idempotente:
+
+Para cada plantilla activa, `effectiveDay = min(day_of_month, díasDelMes)`. Se
+genera un gasto (con fecha `effectiveDay` del mes en curso) si **no se ha
+generado ya este mes** (`last_run_on` no pertenece al mes actual) y
+`hoy.día >= effectiveDay`. La condición `>=` (en vez de `==`) da tolerancia a
+que el planificador no corra un día exacto (la plataforma gratuita puede
+dormir/reiniciar): al volver, hace *catch-up* del mes. Tras generar, se fija
+`last_run_on = hoy`.
+
+Ejecutar cada hora es seguro: la comprobación "ya generado este mes" hace la
+operación idempotente (un solo gasto por plantilla y mes).
+
+**Sin cargos retroactivos al crear.** Al dar de alta una plantilla, si su día ya
+pasó en el mes en curso (`day_of_month <= hoy.día`), se inicializa
+`last_run_on = hoy` para que **no** genere un gasto de este mes; empezará el mes
+siguiente. Si el día aún no llegó, `last_run_on` queda nulo y generará este mes.
+
+### 14.3 Endpoints
+
+CRUD de plantillas; el usuario nunca dispara la generación manualmente.
+
+| Método | Ruta | Request | Response OK | Errores |
+|---|---|---|---|---|
+| GET | /api/recurring-expenses | — | `200` `RecurringExpenseDto[]` | `401` |
+| POST | /api/recurring-expenses | `{ categoryId, amount, dayOfMonth, note? }` | `201` `RecurringExpenseDto` | `400`, `404`, `401` |
+| PUT | /api/recurring-expenses/{id} | igual que POST | `200` `RecurringExpenseDto` | `400`, `404`, `401` |
+| DELETE | /api/recurring-expenses/{id} | — | `204` | `404`, `401` |
+
+`RecurringExpenseDto`:
+```json
+{
+  "id": "uuid",
+  "categoryId": "uuid",
+  "categoryName": "Suscripciones",
+  "color": "#A855F7",
+  "amount": 9.99,
+  "dayOfMonth": 5,
+  "note": "Streaming",
+  "nextRunOn": "2026-08-05"
+}
+```
+
+- `nextRunOn` (calculado) indica la próxima fecha en que la plantilla generará un
+  gasto, para que la UI la muestre.
+- **POST/PUT**: `categoryId` debe ser global o propia del usuario (`404`);
+  `amount > 0`; `dayOfMonth` entre 1 y 31.
+- **DELETE**: borrado lógico; los gastos ya generados no se tocan.
+
+### 14.4 Decisiones
+
+**Quartz.NET como hosted service en el mismo proceso (elegida) vs worker/cron
+externo.**
+Un job en el propio host de la API no añade infraestructura (encaja en el plan
+gratuito de un solo servicio) y es suficiente para una tarea diaria/horaria.
+*Descartado:* un servicio worker aparte o un cron de plataforma (más piezas para
+desplegar, sin beneficio a esta escala).
+
+**Sin columna de enlace en `expenses` (elegida) vs FK `recurring_expense_id`.**
+El gasto generado es un gasto normal, editable y borrable como cualquier otro; no
+necesita comportarse distinto. Evita una FK y su gestión al borrar plantillas.
+*Descartado (documentado):* enlazar el gasto a su plantilla para trazabilidad;
+se podría añadir después de forma aditiva si se quisiera mostrar el origen.
